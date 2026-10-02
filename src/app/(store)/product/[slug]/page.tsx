@@ -1,0 +1,56 @@
+import React from 'react';
+import { notFound } from 'next/navigation';
+import connectDB from '@/lib/mongodb';
+import Product from '@/models/Product';
+import ProductDetailPageClient from './ProductDetailPageClient';
+
+interface ProductPageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: ProductPageProps) {
+  const { slug } = await params;
+  await connectDB();
+  const product = await Product.findOne({ $or: [{ slug }, { sku: slug }] }).lean();
+
+  if (!product) {
+    return { title: 'Product Not Found | US Dresses' };
+  }
+
+  const productName = typeof product.name === 'object' && product.name !== null ? (product.name as any).en || (product.name as any).ne : String(product.name || '');
+
+  return {
+    title: product.seoTitle || `${productName} | US Dresses Hetauda`,
+    description: product.seoDescription || product.shortDescription,
+  };
+}
+
+export default async function ProductDetailPage({ params }: ProductPageProps) {
+  const { slug } = await params;
+  await connectDB();
+
+  const product = await Product.findOne({ $or: [{ slug }, { sku: slug }] })
+    .populate('category', 'name slug')
+    .lean();
+
+  if (!product) {
+    notFound();
+  }
+
+  const relatedProducts = await Product.find({
+    category: (product.category as any)?._id || product.category,
+    _id: { $ne: product._id },
+    status: 'PUBLISHED',
+  })
+    .limit(4)
+    .lean();
+
+  const serialize = (obj: any) => JSON.parse(JSON.stringify(obj));
+
+  return (
+    <ProductDetailPageClient
+      product={serialize(product)}
+      relatedProducts={serialize(relatedProducts)}
+    />
+  );
+}

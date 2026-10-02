@@ -1,0 +1,40 @@
+import { z } from 'zod';
+
+export const variantSchema = z.object({
+  sku: z.string().min(1, 'SKU is required'),
+  size: z.string().min(1, 'Size is required'),
+  color: z.string().min(1, 'Color is required'),
+  price: z.number().min(0, 'Price must be positive'),
+  stock: z.number().min(0, 'Stock cannot be negative'),
+  image: z.string().optional(),
+});
+
+export const productSchema = z.object({
+  name: z.string().min(3, 'Product name is required'),
+  slug: z.string().min(3, 'Slug is required'),
+  sku: z.string().min(3, 'SKU is required'),
+  description: z.string().min(10, 'Full description is required'),
+  shortDescription: z.string().min(5, 'Short description is required'),
+  category: z.string().min(1, 'Category is required'),
+  subCategory: z.string().optional(),
+  brand: z.string().default('US Dresses & Garment Udyog'),
+  images: z.array(z.string()).min(1, 'At least one image is required'),
+  thumbnail: z.string().min(1, 'Thumbnail is required'),
+  price: z.number().min(0, 'Price must be non-negative'),
+  compareAtPrice: z.number().optional(),
+  discount: z.number().default(0),
+  sizes: z.array(z.string()).default([]),
+  colors: z.array(z.string()).default([]),
+  variants: z.array(variantSchema).default([]),
+  stock: z.number().min(0, 'Stock cannot be negative'),
+  tags: z.array(z.string()).default([]),
+  material: z.string().optional(),
+  careInstructions: z.string().optional(),
+  isFeatured: z.boolean().default(false),
+  isNewArrival: z.boolean().default(false),
+  isBestSeller: z.boolean().default(false),
+  isOnSale: z.boolean().default(false),
+  status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).default('PUBLISHED'),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+});
