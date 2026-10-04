@@ -19,8 +19,12 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
     }
 
-    if (!admin && session && order.user && order.user.toString() !== session.userId) {
-      return NextResponse.json({ success: false, error: 'Unauthorized to view this order' }, { status: 403 });
+    if (!admin) {
+      if (order.user) {
+        if (!session || order.user.toString() !== session.userId) {
+          return NextResponse.json({ success: false, error: 'Unauthorized to view this order' }, { status: 403 });
+        }
+      }
     }
 
     return NextResponse.json({ success: true, order });

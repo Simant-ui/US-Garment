@@ -8,33 +8,40 @@ interface SearchProps {
   searchParams: Promise<{ q?: string }>;
 }
 
+export const revalidate = 60;
+
 export default async function SearchPage({ searchParams }: SearchProps) {
   const { q } = await searchParams;
   const queryText = q?.trim() || '';
 
-  await connectDB();
+  const db = await connectDB();
 
   let products: any[] = [];
   let matchingCategories: any[] = [];
 
-  if (queryText) {
-    const regex = new RegExp(queryText, 'i');
-    products = await Product.find({
-      $or: [
-        { name: regex },
-        { description: regex },
-        { tags: regex },
-        { sku: regex },
-      ],
-      status: 'PUBLISHED',
-    })
-      .populate('category', 'name slug')
-      .lean();
-
-    matchingCategories = await Category.find({
-      name: regex,
-      isActive: true,
-    }).lean();
+  if (db && queryText) {
+    try {
+      const regex = new RegExp(queryText, 'i');
+      [products, matchingCategories] = await Promise.all([
+        Product.find({
+          $or: [
+            { name: regex },
+            { description: regex },
+            { tags: regex },
+            { sku: regex },
+          ],
+          status: 'PUBLISHED',
+        })
+          .populate('category', 'name slug')
+          .lean(),
+        Category.find({
+          name: regex,
+          isActive: true,
+        }).lean(),
+      ]);
+    } catch (e) {
+      console.warn('Failed to search products:', e);
+    }
   }
 
   const serialize = (obj: any) => JSON.parse(JSON.stringify(obj));

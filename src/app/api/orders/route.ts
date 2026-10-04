@@ -65,6 +65,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Cart is empty' }, { status: 400 });
     }
 
+    if (!shippingAddress || typeof shippingAddress !== 'object') {
+      return NextResponse.json({ success: false, error: 'Shipping address details are required' }, { status: 400 });
+    }
+
     const validation = checkoutSchema.safeParse({
       fullName: shippingAddress.fullName,
       phone: shippingAddress.phone,
