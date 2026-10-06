@@ -1,22 +1,26 @@
 import React from 'react';
-import connectDB from '@/lib/mongodb';
-import Product from '@/models/Product';
+import prisma from '@/lib/prisma';
 import CategoryCollectionClient from '@/components/common/CategoryCollectionClient';
 
 export const revalidate = 60;
 
 export default async function WomenPage() {
-  const db = await connectDB();
   let products: any[] = [];
-  if (db) {
-    try {
-      products = await Product.find({
-        $or: [{ tags: 'Ladies Wear' }, { tags: 'Kurtha' }, { tags: 'Gown' }],
+  try {
+    products = await prisma.product.findMany({
+      where: {
         status: 'PUBLISHED',
-      }).populate('category', 'name slug').lean();
-    } catch (e) {
-      console.warn('Failed to load women collection:', e);
-    }
+        OR: [
+          { category: { slug: 'ladies-kurtha' } },
+          { category: { slug: 'ladies-gown' } },
+          { name: { contains: 'Ladies' } },
+          { name: { contains: 'Kurtha' } },
+        ],
+      },
+      include: { category: { select: { name: true, slug: true } } },
+    });
+  } catch (e) {
+    console.warn('Failed to load women collection:', e);
   }
 
   const serialize = (obj: any) => JSON.parse(JSON.stringify(obj));

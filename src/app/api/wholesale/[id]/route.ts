@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import WholesaleInquiry from '@/models/WholesaleInquiry';
+import prisma from '@/lib/prisma';
 import { getAdminUser } from '@/lib/auth';
 
 export async function PUT(
@@ -13,14 +12,18 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Unauthorized Admin' }, { status: 401 });
     }
 
-    await connectDB();
     const { id } = await params;
     const body = await req.json();
 
-    const updated = await WholesaleInquiry.findByIdAndUpdate(id, { $set: body }, { new: true });
-    if (!updated) {
+    const existing = await prisma.wholesaleInquiry.findUnique({ where: { id } });
+    if (!existing) {
       return NextResponse.json({ success: false, error: 'Wholesale inquiry not found' }, { status: 404 });
     }
+
+    const updated = await prisma.wholesaleInquiry.update({
+      where: { id },
+      data: body,
+    });
 
     return NextResponse.json({ success: true, message: 'Status updated', wholesaleInquiry: updated });
   } catch (error: any) {

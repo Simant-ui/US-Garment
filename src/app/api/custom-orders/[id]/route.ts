@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import CustomOrder from '@/models/CustomOrder';
+import prisma from '@/lib/prisma';
 import { getAdminUser } from '@/lib/auth';
 
 export async function PUT(
@@ -13,14 +12,18 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Unauthorized Admin' }, { status: 401 });
     }
 
-    await connectDB();
     const { id } = await params;
     const body = await req.json();
 
-    const updated = await CustomOrder.findByIdAndUpdate(id, { $set: body }, { new: true });
-    if (!updated) {
+    const existing = await prisma.customOrder.findUnique({ where: { id } });
+    if (!existing) {
       return NextResponse.json({ success: false, error: 'Custom order request not found' }, { status: 404 });
     }
+
+    const updated = await prisma.customOrder.update({
+      where: { id },
+      data: body,
+    });
 
     return NextResponse.json({ success: true, message: 'Status updated', customOrder: updated });
   } catch (error: any) {

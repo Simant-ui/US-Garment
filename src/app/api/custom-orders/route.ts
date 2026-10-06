@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import CustomOrder from '@/models/CustomOrder';
+import prisma from '@/lib/prisma';
 import { getAdminUser } from '@/lib/auth';
 import { customOrderSchema } from '@/validations/customOrder.schema';
 
@@ -11,14 +10,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized Admin' }, { status: 401 });
     }
 
-    await connectDB();
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
 
-    const query: any = {};
-    if (status) query.status = status;
+    const where: any = {};
+    if (status) where.status = status;
 
-    const customOrders = await CustomOrder.find(query).sort({ createdAt: -1 }).lean();
+    const customOrders = await prisma.customOrder.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
     return NextResponse.json({ success: true, customOrders });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message || 'Server Error' }, { status: 500 });
@@ -27,7 +28,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
     const body = await req.json();
 
     const validation = customOrderSchema.safeParse(body);
@@ -37,10 +37,12 @@ export async function POST(req: NextRequest) {
 
     const requestNumber = `CST-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
 
-    const newCustomOrder = await CustomOrder.create({
-      ...validation.data,
-      requestNumber,
-      status: 'New',
+    const newCustomOrder = await prisma.customOrder.create({
+      data: {
+        ...(validation.data as any),
+        requestNumber,
+        status: 'New',
+      },
     });
 
     return NextResponse.json(

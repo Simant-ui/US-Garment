@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import Order from '@/models/Order';
-import Product from '@/models/Product';
+import prisma from '@/lib/prisma';
 import { getSessionUser, getAdminUser } from '@/lib/auth';
 import { checkoutSchema } from '@/validations/order.schema';
 import { getPaymentProvider } from '@/lib/payments';
 
 export async function GET(req: NextRequest) {
   try {
-    await connectDB();
     const admin = await getAdminUser(req);
     const session = await getSessionUser(req);
 
@@ -18,23 +15,27 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '15');
     const skip = (page - 1) * limit;
 
-    let query: any = {};
+    let where: any = {};
 
     if (admin) {
-      if (status) query.status = status;
+      if (status) where.status = status;
     } else if (session) {
-      query.user = session.userId;
+      where.userId = session.userId;
     } else {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const [orders, total] = await Promise.all([
-      Order.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Order.countDocuments(query),
+      prisma.order.findMany({
+        where,
+        include: {
+          items: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.order.count({ where }),
     ]);
 
     return NextResponse.json({
@@ -55,7 +56,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
     const session = await getSessionUser(req);
     const body = await req.json();
 
@@ -89,32 +89,37 @@ export async function POST(req: NextRequest) {
 
     // Calculate subtotal & verify stock
     let subtotal = 0;
-    const orderItems = [];
+    const orderItemsData = [];
 
     for (const item of items) {
-      const dbProduct = await Product.findById(item.productId);
+      const dbProduct = await prisma.product.findFirst({
+        where: { OR: [{ id: item.productId }, { slug: item.productId }] },
+      });
+
       if (!dbProduct) {
-        return NextResponse.json({ success: false, error: `Product ${item.name} no longer exists.` }, { status: 400 });
+        return NextResponse.json({ success: false, error: `Product ${item.name || item.productId} no longer exists.` }, { status: 400 });
       }
 
       const itemTotal = dbProduct.price * item.quantity;
       subtotal += itemTotal;
 
-      orderItems.push({
-        product: dbProduct._id,
+      orderItemsData.push({
+        productId: dbProduct.id,
         name: dbProduct.name,
         sku: dbProduct.sku,
         image: item.image || dbProduct.thumbnail,
         price: dbProduct.price,
-        size: item.size,
-        color: item.color,
+        size: item.size || null,
+        color: item.color || null,
         quantity: item.quantity,
         total: itemTotal,
       });
 
       // Deduct stock
-      dbProduct.stock = Math.max(0, dbProduct.stock - item.quantity);
-      await dbProduct.save();
+      await prisma.product.update({
+        where: { id: dbProduct.id },
+        data: { stock: Math.max(0, dbProduct.stock - item.quantity) },
+      });
     }
 
     // Coupon discount logic
@@ -130,54 +135,61 @@ export async function POST(req: NextRequest) {
 
     const orderNumber = `USD-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
 
-    const newOrder = await Order.create({
-      orderNumber,
-      user: session ? session.userId : undefined,
-      guestCustomer: !session
-        ? {
-            name: shippingAddress.fullName,
-            email: shippingAddress.email,
-            phone: shippingAddress.phone,
-          }
-        : undefined,
-      shippingAddress: {
-        fullName: shippingAddress.fullName,
-        phone: shippingAddress.phone,
-        province: shippingAddress.province,
-        district: shippingAddress.district,
-        city: shippingAddress.city,
-        addressLine: shippingAddress.addressLine,
-        landmark: shippingAddress.landmark,
-      },
-      items: orderItems,
-      subtotal,
-      discount,
-      shippingFee,
-      totalAmount,
-      couponCode,
-      paymentMethod,
-      paymentStatus: paymentMethod === 'COD' ? 'PENDING' : 'PAID',
-      status: 'Pending',
-      statusHistory: [
-        {
-          status: 'Pending',
-          updatedBy: session ? session.name : 'Customer Guest Checkout',
-          comment: 'Order placed by customer',
-          timestamp: new Date(),
+    const newOrder = await prisma.order.create({
+      data: {
+        orderNumber,
+        userId: session ? session.userId : null,
+        guestCustomer: !session
+          ? {
+              name: shippingAddress.fullName,
+              email: shippingAddress.email,
+              phone: shippingAddress.phone,
+            }
+          : undefined,
+        shippingAddress: {
+          fullName: shippingAddress.fullName,
+          phone: shippingAddress.phone,
+          province: shippingAddress.province,
+          district: shippingAddress.district,
+          city: shippingAddress.city,
+          addressLine: shippingAddress.addressLine,
+          landmark: shippingAddress.landmark,
         },
-      ],
-      orderNotes,
+        items: {
+          create: orderItemsData,
+        },
+        subtotal,
+        discount,
+        shippingFee,
+        totalAmount,
+        couponCode,
+        paymentMethod,
+        paymentStatus: paymentMethod === 'COD' ? 'PENDING' : 'PAID',
+        status: 'Pending',
+        statusHistory: [
+          {
+            status: 'Pending',
+            updatedBy: session ? session.name : 'Customer Guest Checkout',
+            comment: 'Order placed by customer',
+            timestamp: new Date().toISOString(),
+          },
+        ],
+        orderNotes,
+      },
+      include: {
+        items: true,
+      },
     });
 
     // Process payment abstraction
     const paymentProvider = getPaymentProvider(paymentMethod);
     const paymentResult = await paymentProvider.processPayment({
-      orderId: newOrder._id.toString(),
+      orderId: newOrder.id,
       amount: totalAmount,
       customerName: shippingAddress.fullName,
       customerEmail: shippingAddress.email || 'customer@example.com',
       customerPhone: shippingAddress.phone,
-      returnUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/order-success/${newOrder._id}`,
+      returnUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001'}/order-success/${newOrder.id}`,
     });
 
     return NextResponse.json(

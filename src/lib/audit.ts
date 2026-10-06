@@ -1,5 +1,4 @@
-import AuditLog from '@/models/AuditLog';
-import { connectDB } from '@/lib/mongodb';
+import prisma from '@/lib/prisma';
 
 export async function createAuditLog({
   action,
@@ -19,16 +18,16 @@ export async function createAuditLog({
   ipAddress?: string;
 }) {
   try {
-    await connectDB();
-    await AuditLog.create({
-      action,
-      performedBy,
-      performedByName,
-      targetType,
-      targetId,
-      details: details || {},
-      ipAddress: ipAddress || '127.0.0.1',
-      createdAt: new Date(),
+    await prisma.auditLog.create({
+      data: {
+        action,
+        performedBy,
+        performedByName,
+        targetType,
+        targetId,
+        details: details || {},
+        ipAddress: ipAddress || '127.0.0.1',
+      },
     });
   } catch (error) {
     console.error('Failed to create audit log:', error);

@@ -1,33 +1,48 @@
 import React from 'react';
-import connectDB from '@/lib/mongodb';
-import Product from '@/models/Product';
-import Category from '@/models/Category';
+import prisma from '@/lib/prisma';
 import HomePageClient from './HomePageClient';
 
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const db = await connectDB();
-
   let newArrivals: any[] = [];
   let bestSellers: any[] = [];
   let schoolUniforms: any[] = [];
   let categories: any[] = [];
 
-  if (db) {
-    try {
-      [newArrivals, bestSellers, schoolUniforms, categories] = await Promise.all([
-        Product.find({ isNewArrival: true, status: 'PUBLISHED' }).populate('category', 'name slug').limit(4).lean(),
-        Product.find({ isBestSeller: true, status: 'PUBLISHED' }).populate('category', 'name slug').limit(4).lean(),
-        Product.find({ tags: 'School Uniform', status: 'PUBLISHED' }).populate('category', 'name slug').limit(4).lean(),
-        Category.find({ isActive: true }).sort({ orderIndex: 1 }).limit(8).lean(),
-      ]);
-    } catch (e) {
-      console.warn('Failed to load homepage products:', e);
-    }
+  try {
+    [newArrivals, bestSellers, schoolUniforms, categories] = await Promise.all([
+      prisma.product.findMany({
+        where: { isNewArrival: true, status: 'PUBLISHED' },
+        include: { category: { select: { name: true, slug: true } } },
+        take: 4,
+      }),
+      prisma.product.findMany({
+        where: { isBestSeller: true, status: 'PUBLISHED' },
+        include: { category: { select: { name: true, slug: true } } },
+        take: 4,
+      }),
+      prisma.product.findMany({
+        where: {
+          status: 'PUBLISHED',
+          OR: [
+            { tags: { equals: ['School Uniform'] } },
+            { category: { slug: 'school-uniform' } },
+          ],
+        },
+        include: { category: { select: { name: true, slug: true } } },
+        take: 4,
+      }),
+      prisma.category.findMany({
+        where: { isActive: true },
+        orderBy: { orderIndex: 'asc' },
+        take: 8,
+      }),
+    ]);
+  } catch (e) {
+    console.warn('Failed to load homepage products:', e);
   }
 
-  // Convert MongoDB objects (_id, timestamps) to clean JSON plain objects for React client component serialization
   const serialize = (obj: any) => JSON.parse(JSON.stringify(obj));
 
   return (

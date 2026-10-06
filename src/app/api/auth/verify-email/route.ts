@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import User from '@/models/User';
-import PendingUser from '@/models/PendingUser';
+import prisma from '@/lib/prisma';
 import { comparePassword } from '@/lib/auth';
 import { verifyOtpSchema } from '@/validations/auth.schema';
 
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
     const body = await req.json();
 
     const validation = verifyOtpSchema.safeParse(body);
@@ -22,7 +19,7 @@ export async function POST(req: NextRequest) {
     const normalizedEmail = email.toLowerCase().trim();
 
     // 1. Check if pending registration exists
-    const pending = await PendingUser.findOne({ email: normalizedEmail });
+    const pending = await prisma.pendingUser.findUnique({ where: { email: normalizedEmail } });
     if (!pending) {
       return NextResponse.json(
         { success: false, error: 'No pending registration found for this email or session expired. Please sign up again.' },
@@ -30,7 +27,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Check max attempt limit (e.g. max 5 attempts)
+    // 2. Check max attempt limit (max 5 attempts)
     if ((pending.otpAttempts || 0) >= 5) {
       return NextResponse.json(
         { success: false, error: 'Too many failed verification attempts. Please click "Resend Code" to get a new code.' },
@@ -39,7 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Check expiration
-    const expiry = pending.otpExpiresAt || pending.expiresAt || new Date(Date.now() + 10 * 60 * 1000);
+    const expiry = pending.otpExpiresAt || new Date(Date.now() + 10 * 60 * 1000);
     if (new Date() > new Date(expiry)) {
       return NextResponse.json(
         { success: false, error: 'This verification code has expired. Please request a new code.' },
@@ -48,11 +45,12 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Verify OTP hash server-side
-    const otpToCompare = pending.otpHash || pending.otp || '';
-    const isValidOtp = await comparePassword(otp, otpToCompare);
+    const isValidOtp = await comparePassword(otp, pending.otpHash || '');
     if (!isValidOtp) {
-      pending.otpAttempts = (pending.otpAttempts || 0) + 1;
-      await pending.save();
+      await prisma.pendingUser.update({
+        where: { id: pending.id },
+        data: { otpAttempts: (pending.otpAttempts || 0) + 1 },
+      });
 
       return NextResponse.json(
         { success: false, error: 'Invalid verification code. Please try again.' },
@@ -60,28 +58,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 5. Create final User account
-    let user = await User.findOne({ email: normalizedEmail });
-    if (user) {
-      user.name = pending.name;
-      user.password = pending.passwordHash;
-      user.phone = pending.phone;
-      user.isVerified = true;
-      user.role = 'CUSTOMER';
-      await user.save();
-    } else {
-      user = await User.create({
+    // 5. Create or update final User account
+    await prisma.user.upsert({
+      where: { email: normalizedEmail },
+      update: {
+        name: pending.name,
+        password: pending.passwordHash,
+        phone: pending.phone,
+        isVerified: true,
+        role: 'CUSTOMER',
+      },
+      create: {
         name: pending.name,
         email: normalizedEmail,
         password: pending.passwordHash,
         phone: pending.phone,
         role: 'CUSTOMER',
         isVerified: true,
-      });
-    }
+      },
+    });
 
     // 6. Delete pending registration to prevent OTP reuse
-    await PendingUser.deleteOne({ _id: pending._id });
+    await prisma.pendingUser.delete({ where: { id: pending.id } });
 
     return NextResponse.json({
       success: true,

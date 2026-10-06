@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import AdminUser from '@/models/AdminUser';
+import prisma from '@/lib/prisma';
 import { comparePassword, signToken } from '@/lib/auth';
 import { adminLoginSchema } from '@/validations/auth.schema';
 
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
     const body = await req.json();
 
     const validation = adminLoginSchema.safeParse(body);
@@ -15,7 +13,9 @@ export async function POST(req: NextRequest) {
     }
 
     const { email, password } = validation.data;
-    const admin = await AdminUser.findOne({ email: email.toLowerCase(), isActive: true });
+    const admin = await prisma.adminUser.findFirst({
+      where: { email: email.toLowerCase(), isActive: true },
+    });
 
     if (!admin) {
       return NextResponse.json({ success: false, error: 'Invalid admin credentials or inactive account' }, { status: 401 });
@@ -26,11 +26,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid admin credentials' }, { status: 401 });
     }
 
-    admin.lastLogin = new Date();
-    await admin.save();
+    await prisma.adminUser.update({
+      where: { id: admin.id },
+      data: { lastLogin: new Date() },
+    });
 
     const token = signToken({
-      userId: admin._id.toString(),
+      userId: admin.id,
       email: admin.email,
       name: admin.name,
       role: admin.role,
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
       message: 'Admin authentication successful',
       token,
       user: {
-        id: admin._id.toString(),
+        id: admin.id,
         name: admin.name,
         email: admin.email,
         role: admin.role,

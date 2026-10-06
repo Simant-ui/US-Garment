@@ -50,6 +50,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('us_garment_user');
     document.cookie = 'garment_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     document.cookie = 'garment_admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    if (typeof window !== 'undefined') {
+      window.location.href = '/admin/login';
+    }
   };
 
   return (

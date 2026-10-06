@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import Category from '@/models/Category';
+import prisma from '@/lib/prisma';
 import { getAdminUser } from '@/lib/auth';
 
 export async function GET() {
   try {
-    await connectDB();
-    const categories = await Category.find({ isActive: true }).sort({ orderIndex: 1, name: 1 }).lean();
+    const categories = await prisma.category.findMany({
+      where: { isActive: true },
+      orderBy: [{ orderIndex: 'asc' }, { name: 'asc' }],
+    });
     return NextResponse.json({ success: true, categories });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message || 'Server Error' }, { status: 500 });
@@ -20,10 +21,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized Admin' }, { status: 401 });
     }
 
-    await connectDB();
     const body = await req.json();
 
-    const category = await Category.create(body);
+    const category = await prisma.category.create({
+      data: body,
+    });
     return NextResponse.json({ success: true, message: 'Category created', category }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message || 'Server Error' }, { status: 500 });

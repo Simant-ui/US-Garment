@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import Order from '@/models/Order';
-import Product from '@/models/Product';
-import User from '@/models/User';
-import CustomOrder from '@/models/CustomOrder';
-import WholesaleInquiry from '@/models/WholesaleInquiry';
+import prisma from '@/lib/prisma';
 import { getAdminUser } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -13,8 +8,6 @@ export async function GET(req: NextRequest) {
     if (!admin) {
       return NextResponse.json({ success: false, error: 'Unauthorized Admin' }, { status: 401 });
     }
-
-    await connectDB();
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -32,39 +25,43 @@ export async function GET(req: NextRequest) {
       customersCount,
       productsCount,
       lowStockProducts,
-      salesData,
-      todaySalesData,
-      monthSalesData,
+      totalSalesAgg,
+      todaySalesAgg,
+      monthSalesAgg,
       recentOrders,
       recentCustomOrders,
     ] = await Promise.all([
-      Order.countDocuments(),
-      Order.countDocuments({ status: 'Pending' }),
-      Order.countDocuments({ status: 'Delivered' }),
-      CustomOrder.countDocuments(),
-      WholesaleInquiry.countDocuments(),
-      User.countDocuments({ role: 'CUSTOMER' }),
-      Product.countDocuments(),
-      Product.find({ stock: { $lte: 5 } }).select('name sku stock thumbnail price').limit(5).lean(),
-      Order.aggregate([
-        { $match: { status: { $ne: 'Cancelled' } } },
-        { $group: { _id: null, total: { $sum: '$totalAmount' } } },
-      ]),
-      Order.aggregate([
-        { $match: { status: { $ne: 'Cancelled' }, createdAt: { $gte: todayStart } } },
-        { $group: { _id: null, total: { $sum: '$totalAmount' } } },
-      ]),
-      Order.aggregate([
-        { $match: { status: { $ne: 'Cancelled' }, createdAt: { $gte: monthStart } } },
-        { $group: { _id: null, total: { $sum: '$totalAmount' } } },
-      ]),
-      Order.find().sort({ createdAt: -1 }).limit(5).lean(),
-      CustomOrder.find().sort({ createdAt: -1 }).limit(5).lean(),
+      prisma.order.count(),
+      prisma.order.count({ where: { status: 'Pending' } }),
+      prisma.order.count({ where: { status: 'Delivered' } }),
+      prisma.customOrder.count(),
+      prisma.wholesaleInquiry.count(),
+      prisma.user.count({ where: { role: 'CUSTOMER' } }),
+      prisma.product.count(),
+      prisma.product.findMany({
+        where: { stock: { lte: 5 } },
+        select: { id: true, name: true, sku: true, stock: true, thumbnail: true, price: true },
+        take: 5,
+      }),
+      prisma.order.aggregate({
+        where: { status: { not: 'Cancelled' } },
+        _sum: { totalAmount: true },
+      }),
+      prisma.order.aggregate({
+        where: { status: { not: 'Cancelled' }, createdAt: { gte: todayStart } },
+        _sum: { totalAmount: true },
+      }),
+      prisma.order.aggregate({
+        where: { status: { not: 'Cancelled' }, createdAt: { gte: monthStart } },
+        _sum: { totalAmount: true },
+      }),
+      prisma.order.findMany({ orderBy: { createdAt: 'desc' }, take: 5 }),
+      prisma.customOrder.findMany({ orderBy: { createdAt: 'desc' }, take: 5 }),
     ]);
 
-    const totalSales = salesData[0]?.total || 0;
-    const todaySales = todaySalesData[0]?.total || 0;
-    const monthlySales = monthSalesData[0]?.total || 0;
+    const totalSales = totalSalesAgg._sum.totalAmount || 0;
+    const todaySales = todaySalesAgg._sum.totalAmount || 0;
+    const monthlySales = monthSalesAgg._sum.totalAmount || 0;
 
     return NextResponse.json({
       success: true,

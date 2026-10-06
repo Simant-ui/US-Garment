@@ -1,0 +1,308 @@
+// Prisma Schema for US Dresses & Garment Udyog (MySQL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  SUPER_ADMIN
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum OrderStatus {
+  Pending
+  Confirmed
+  Processing
+  Shipped
+  Delivered
+  Cancelled
+  Refunded
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+model User {
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  password   String
+  phone      String?
+  role       Role     @default(CUSTOMER)
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  orders Order[]
+
+  @@map("users")
+}
+
+model PendingUser {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  passwordHash  String
+  phone         String?
+  otpHash       String
+  otpExpiresAt  DateTime
+  otpAttempts   Int       @default(0)
+  lastOtpSentAt DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("pending_users")
+}
+
+model AdminUser {
+  id          String    @id @default(cuid())
+  name        String
+  email       String    @unique
+  password    String
+  role        Role      @default(ADMIN)
+  permissions Json?
+  isActive    Boolean   @default(true)
+  lastLogin   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("admin_users")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?   @db.Text
+  image       String?
+  orderIndex  Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id               String        @id @default(cuid())
+  name             String
+  slug             String        @unique
+  sku              String        @unique
+  description      String?       @db.Text
+  shortDescription String?       @db.Text
+  categoryId       String?
+  category         Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  brand            String        @default("US Dresses & Garment Udyog")
+  images           Json
+  thumbnail        String
+  price            Float
+  compareAtPrice   Float?
+  discount         Float         @default(0)
+  sizes            Json
+  colors           Json
+  stock            Int           @default(0)
+  tags             Json
+  material         String?
+  careInstructions String?
+  isFeatured       Boolean       @default(false)
+  isNewArrival     Boolean       @default(false)
+  isBestSeller     Boolean       @default(false)
+  isOnSale         Boolean       @default(false)
+  status           ProductStatus @default(PUBLISHED)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique
+  userId          String?
+  user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  guestCustomer   Json?
+  shippingAddress Json
+  subtotal        Float
+  discount        Float         @default(0)
+  shippingFee     Float         @default(0)
+  totalAmount     Float
+  couponCode      String?
+  paymentMethod   String        @default("COD")
+  paymentStatus   PaymentStatus @default(PENDING)
+  status          OrderStatus   @default(Pending)
+  statusHistory   Json?
+  orderNotes      String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  name      String
+  sku       String?
+  image     String?
+  price     Float
+  size      String?
+  color     String?
+  quantity  Int
+  total     Float
+
+  @@map("order_items")
+}
+
+model CustomOrder {
+  id              String   @id @default(cuid())
+  requestNumber   String   @unique
+  fullName        String
+  phone           String
+  email           String
+  garmentType     String
+  gender          String
+  measurements    Json
+  preferredFabric String?
+  referenceImages Json?
+  customNotes     String?  @db.Text
+  estimatedBudget Float?
+  status          String   @default("New")
+  adminNotes      String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("custom_orders")
+}
+
+model WholesaleInquiry {
+  id                 String   @id @default(cuid())
+  inquiryNumber      String   @unique
+  businessName       String
+  contactPerson      String
+  email              String
+  phone              String
+  address            String?
+  productCategories  Json
+  estimatedQuantity  Int
+  timeline           String?
+  targetPricePerUnit Float?
+  additionalNotes    String?  @db.Text
+  status             String   @default("New")
+  adminNotes         String?  @db.Text
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("wholesale_inquiries")
+}
+
+model Coupon {
+  id               String       @id @default(cuid())
+  code             String       @unique
+  description      String?
+  discountType     DiscountType @default(PERCENTAGE)
+  discountValue    Float
+  minOrderAmount   Float        @default(0)
+  maxDiscountAmount Float?
+  expiryDate       DateTime?
+  usageLimit       Int?
+  timesUsed        Int          @default(0)
+  isActive         Boolean      @default(true)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@map("coupons")
+}
+
+model SiteSettings {
+  id                    String   @id @default(cuid())
+  businessName          String   @default("US Dresses and Garment Udyog")
+  tagline               String?
+  logo                  String?
+  phone                 String?
+  whatsapp              String?
+  email                 String?
+  address               String?
+  shippingCharge        Float    @default(150)
+  freeShippingThreshold Float    @default(3000)
+  socialLinks           Json?
+  announcementBar       Json?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model Announcement {
+  id                  String   @id @default(cuid())
+  internalName        String
+  type                String
+  title               Json
+  subtitle            Json?
+  content             Json?
+  displayType         String   @default("center_popup")
+  popupStyle          String   @default("promotion")
+  primaryColor        String   @default("#0F4C3A")
+  accentColor         String   @default("#9B111E")
+  image               String?
+  ctaEnabled          Boolean  @default(true)
+  ctaText             Json?
+  ctaUrl              String?
+  allowDoNotShowAgain Boolean  @default(true)
+  displayFrequency    String   @default("once_session")
+  priority            String   @default("high")
+  isActive            Boolean  @default(true)
+  startAt             DateTime @default(now())
+  endAt               DateTime?
+  totalViews          Int      @default(0)
+  totalClicks         Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("announcements")
+}
+
+model AuditLog {
+  id              String   @id @default(cuid())
+  action          String
+  performedBy     String
+  performedByName String?
+  targetType      String
+  targetId        String
+  details         Json?
+  ipAddress       String?
+  createdAt       DateTime @default(now())
+
+  @@map("audit_logs")
+}

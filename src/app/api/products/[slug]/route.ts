@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import Product from '@/models/Product';
-import Category from '@/models/Category';
+import prisma from '@/lib/prisma';
 import { getAdminUser } from '@/lib/auth';
 
 export async function GET(
@@ -9,28 +7,34 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    await connectDB();
     const { slug } = await params;
 
-    const product = await Product.findOne({
-      $or: [{ slug: slug }, { sku: slug }],
-    })
-      .populate('category', 'name slug description')
-      .lean();
+    const product = await prisma.product.findFirst({
+      where: {
+        OR: [{ slug }, { sku: slug }, { id: slug }],
+      },
+      include: {
+        category: {
+          select: { name: true, slug: true, description: true },
+        },
+      },
+    });
 
     if (!product) {
       return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
     }
 
-    // Fetch related products in same category
-    const categoryId = (product.category as any)?._id || product.category;
-    const relatedProducts = await Product.find({
-      category: categoryId,
-      _id: { $ne: product._id },
-      status: 'PUBLISHED',
-    })
-      .limit(4)
-      .lean();
+    let relatedProducts: any[] = [];
+    if (product.categoryId) {
+      relatedProducts = await prisma.product.findMany({
+        where: {
+          categoryId: product.categoryId,
+          id: { not: product.id },
+          status: 'PUBLISHED',
+        },
+        take: 4,
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -53,19 +57,21 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Unauthorized Admin' }, { status: 401 });
     }
 
-    await connectDB();
     const { slug } = await params;
     const body = await req.json();
 
-    const updatedProduct = await Product.findOneAndUpdate(
-      { $or: [{ slug: slug }, { _id: slug }] },
-      { $set: body },
-      { new: true, runValidators: true }
-    );
+    const existingProduct = await prisma.product.findFirst({
+      where: { OR: [{ slug }, { sku: slug }, { id: slug }] },
+    });
 
-    if (!updatedProduct) {
+    if (!existingProduct) {
       return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
     }
+
+    const updatedProduct = await prisma.product.update({
+      where: { id: existingProduct.id },
+      data: body,
+    });
 
     return NextResponse.json({ success: true, message: 'Product updated successfully', product: updatedProduct });
   } catch (error: any) {
@@ -84,16 +90,19 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Unauthorized Admin' }, { status: 401 });
     }
 
-    await connectDB();
     const { slug } = await params;
 
-    const deletedProduct = await Product.findOneAndDelete({
-      $or: [{ slug: slug }, { _id: slug }],
+    const existingProduct = await prisma.product.findFirst({
+      where: { OR: [{ slug }, { sku: slug }, { id: slug }] },
     });
 
-    if (!deletedProduct) {
+    if (!existingProduct) {
       return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
     }
+
+    await prisma.product.delete({
+      where: { id: existingProduct.id },
+    });
 
     return NextResponse.json({ success: true, message: 'Product deleted successfully' });
   } catch (error: any) {

@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import User from '@/models/User';
-import PendingUser from '@/models/PendingUser';
+import prisma from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
 import { sendOtpEmail } from '@/lib/mailer';
 import { registerSchema } from '@/validations/auth.schema';
 
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
     const body = await req.json();
 
     const validation = registerSchema.safeParse(body);
@@ -23,7 +20,7 @@ export async function POST(req: NextRequest) {
     const normalizedEmail = email.toLowerCase().trim();
 
     // 1. Check if email already belongs to an existing verified account
-    const existingUser = await User.findOne({ email: normalizedEmail });
+    const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existingUser && existingUser.isVerified) {
       return NextResponse.json(
         { success: false, error: 'An account with this email address already exists. Please log in.' },
@@ -32,7 +29,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Check 60s cooldown if a pending verification exists
-    const existingPending = await PendingUser.findOne({ email: normalizedEmail });
+    const existingPending = await prisma.pendingUser.findUnique({ where: { email: normalizedEmail } });
     if (existingPending) {
       const timeDiffSeconds = (Date.now() - new Date(existingPending.lastOtpSentAt || Date.now()).getTime()) / 1000;
       if (timeDiffSeconds < 60) {
@@ -57,17 +54,18 @@ export async function POST(req: NextRequest) {
     const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     // 5. Save or update PendingUser record
-    if (existingPending) {
-      existingPending.name = name;
-      existingPending.passwordHash = hashedPassword;
-      existingPending.phone = phone || '';
-      existingPending.otpHash = otpHash;
-      existingPending.otpExpiresAt = otpExpiresAt;
-      existingPending.otpAttempts = 0;
-      existingPending.lastOtpSentAt = new Date();
-      await existingPending.save();
-    } else {
-      await PendingUser.create({
+    await prisma.pendingUser.upsert({
+      where: { email: normalizedEmail },
+      update: {
+        name,
+        passwordHash: hashedPassword,
+        phone: phone || '',
+        otpHash,
+        otpExpiresAt,
+        otpAttempts: 0,
+        lastOtpSentAt: new Date(),
+      },
+      create: {
         name,
         email: normalizedEmail,
         passwordHash: hashedPassword,
@@ -76,8 +74,8 @@ export async function POST(req: NextRequest) {
         otpExpiresAt,
         otpAttempts: 0,
         lastOtpSentAt: new Date(),
-      });
-    }
+      },
+    });
 
     // 6. Send OTP Email via Nodemailer
     const emailSent = await sendOtpEmail(normalizedEmail, name, otp);

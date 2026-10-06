@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import Order from '@/models/Order';
+import prisma from '@/lib/prisma';
 import { getAdminUser, getSessionUser } from '@/lib/auth';
 import { createAuditLog } from '@/lib/audit';
 
@@ -9,19 +8,22 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await connectDB();
     const { id } = await params;
     const admin = await getAdminUser(req);
     const session = await getSessionUser(req);
 
-    const order = await Order.findById(id).lean();
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { items: true },
+    });
+
     if (!order) {
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
     }
 
     if (!admin) {
-      if (order.user) {
-        if (!session || order.user.toString() !== session.userId) {
+      if (order.userId) {
+        if (!session || order.userId !== session.userId) {
           return NextResponse.json({ success: false, error: 'Unauthorized to view this order' }, { status: 403 });
         }
       }
@@ -43,33 +45,36 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Unauthorized Admin' }, { status: 401 });
     }
 
-    await connectDB();
     const { id } = await params;
     const body = await req.json();
     const { status, paymentStatus, comment } = body;
 
-    const order = await Order.findById(id);
+    const order = await prisma.order.findUnique({ where: { id } });
     if (!order) {
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
     }
 
     const previousStatus = order.status;
+    let statusHistory: any[] = Array.isArray(order.statusHistory) ? (order.statusHistory as any[]) : [];
 
     if (status && status !== order.status) {
-      order.status = status;
-      order.statusHistory.push({
+      statusHistory.push({
         status,
         updatedBy: admin.name || admin.email,
         comment: comment || `Status updated from ${previousStatus} to ${status}`,
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
       });
     }
 
-    if (paymentStatus) {
-      order.paymentStatus = paymentStatus;
-    }
-
-    await order.save();
+    const updatedOrder = await prisma.order.update({
+      where: { id },
+      data: {
+        ...(status ? { status: status as any } : {}),
+        ...(paymentStatus ? { paymentStatus: paymentStatus as any } : {}),
+        statusHistory,
+      },
+      include: { items: true },
+    });
 
     // Create Audit Log entry
     await createAuditLog({
@@ -77,11 +82,11 @@ export async function PUT(
       performedBy: admin.userId,
       performedByName: admin.name || admin.email,
       targetType: 'Order',
-      targetId: order._id.toString(),
+      targetId: order.id,
       details: { previousStatus, newStatus: status, paymentStatus },
     });
 
-    return NextResponse.json({ success: true, message: 'Order updated successfully', order });
+    return NextResponse.json({ success: true, message: 'Order updated successfully', order: updatedOrder });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message || 'Server Error' }, { status: 500 });
   }

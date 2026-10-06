@@ -1,7 +1,5 @@
 import React from 'react';
-import connectDB from '@/lib/mongodb';
-import Product from '@/models/Product';
-import Category from '@/models/Category';
+import prisma from '@/lib/prisma';
 import SearchPageClient from './SearchPageClient';
 
 interface SearchProps {
@@ -14,30 +12,29 @@ export default async function SearchPage({ searchParams }: SearchProps) {
   const { q } = await searchParams;
   const queryText = q?.trim() || '';
 
-  const db = await connectDB();
-
   let products: any[] = [];
   let matchingCategories: any[] = [];
 
-  if (db && queryText) {
+  if (queryText) {
     try {
-      const regex = new RegExp(queryText, 'i');
       [products, matchingCategories] = await Promise.all([
-        Product.find({
-          $or: [
-            { name: regex },
-            { description: regex },
-            { tags: regex },
-            { sku: regex },
-          ],
-          status: 'PUBLISHED',
-        })
-          .populate('category', 'name slug')
-          .lean(),
-        Category.find({
-          name: regex,
-          isActive: true,
-        }).lean(),
+        prisma.product.findMany({
+          where: {
+            OR: [
+              { name: { contains: queryText } },
+              { description: { contains: queryText } },
+              { sku: { contains: queryText } },
+            ],
+            status: 'PUBLISHED',
+          },
+          include: { category: { select: { name: true, slug: true } } },
+        }),
+        prisma.category.findMany({
+          where: {
+            name: { contains: queryText },
+            isActive: true,
+          },
+        }),
       ]);
     } catch (e) {
       console.warn('Failed to search products:', e);

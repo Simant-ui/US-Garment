@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import SiteSettings from '@/models/SiteSettings';
+import prisma from '@/lib/prisma';
 import { getAdminUser } from '@/lib/auth';
 
 export async function GET() {
   try {
-    await connectDB();
-    let settings = await SiteSettings.findOne().lean();
+    let settings = await prisma.siteSettings.findFirst();
     if (!settings) {
-      settings = await SiteSettings.create({
-        businessName: 'US Dresses and Garment Udyog',
-        logo: '/images/logo.png',
-        phone: '+977 9855012345',
-        whatsapp: '+9779855012345',
-        email: 'info@usdresses.com.np',
-        address: 'Hetauda-04, Main Road, Makwanpur, Nepal',
+      settings = await prisma.siteSettings.create({
+        data: {
+          businessName: 'US Dresses and Garment Udyog',
+          logo: '/images/logo.png',
+          phone: '+977 9855012345',
+          whatsapp: '+9779855012345',
+          email: 'info@usdresses.com.np',
+          address: 'Hetauda-04, Main Road, Makwanpur, Nepal',
+        },
       });
     }
     return NextResponse.json({ success: true, settings });
@@ -30,15 +30,18 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized Admin' }, { status: 401 });
     }
 
-    await connectDB();
     const body = await req.json();
 
-    let settings = await SiteSettings.findOne();
+    let settings = await prisma.siteSettings.findFirst();
     if (settings) {
-      Object.assign(settings, body);
-      await settings.save();
+      settings = await prisma.siteSettings.update({
+        where: { id: settings.id },
+        data: body,
+      });
     } else {
-      settings = await SiteSettings.create(body);
+      settings = await prisma.siteSettings.create({
+        data: body,
+      });
     }
 
     return NextResponse.json({ success: true, message: 'Settings saved', settings });

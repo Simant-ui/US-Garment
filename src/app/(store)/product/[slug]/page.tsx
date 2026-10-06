@@ -1,7 +1,6 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import connectDB from '@/lib/mongodb';
-import Product from '@/models/Product';
+import prisma from '@/lib/prisma';
 import ProductDetailPageClient from './ProductDetailPageClient';
 
 interface ProductPageProps {
@@ -12,13 +11,12 @@ export const revalidate = 60;
 
 export async function generateMetadata({ params }: ProductPageProps) {
   const { slug } = await params;
-  const db = await connectDB();
   let product: any = null;
-  if (db) {
-    try {
-      product = await Product.findOne({ $or: [{ slug }, { sku: slug }] }).lean();
-    } catch {}
-  }
+  try {
+    product = await prisma.product.findFirst({
+      where: { OR: [{ slug }, { sku: slug }, { id: slug }] },
+    });
+  } catch {}
 
   if (!product) {
     return { title: 'Product | US Dresses Hetauda' };
@@ -34,29 +32,28 @@ export async function generateMetadata({ params }: ProductPageProps) {
 
 export default async function ProductDetailPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const db = await connectDB();
 
   let product: any = null;
   let relatedProducts: any[] = [];
 
-  if (db) {
-    try {
-      product = await Product.findOne({ $or: [{ slug }, { sku: slug }] })
-        .populate('category', 'name slug')
-        .lean();
+  try {
+    product = await prisma.product.findFirst({
+      where: { OR: [{ slug }, { sku: slug }, { id: slug }] },
+      include: { category: { select: { name: true, slug: true } } },
+    });
 
-      if (product) {
-        relatedProducts = await Product.find({
-          category: (product.category as any)?._id || product.category,
-          _id: { $ne: product._id },
+    if (product && product.categoryId) {
+      relatedProducts = await prisma.product.findMany({
+        where: {
+          categoryId: product.categoryId,
+          id: { not: product.id },
           status: 'PUBLISHED',
-        })
-          .limit(4)
-          .lean();
-      }
-    } catch (e) {
-      console.warn(`Failed to load product detail for ${slug}:`, e);
+        },
+        take: 4,
+      });
     }
+  } catch (e) {
+    console.warn(`Failed to load product detail for ${slug}:`, e);
   }
 
   if (!product) {

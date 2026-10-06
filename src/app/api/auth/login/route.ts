@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import User from '@/models/User';
+import prisma from '@/lib/prisma';
 import { comparePassword, signToken } from '@/lib/auth';
 import { loginSchema } from '@/validations/auth.schema';
 
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
     const body = await req.json();
 
     const validation = loginSchema.safeParse(body);
@@ -15,7 +13,10 @@ export async function POST(req: NextRequest) {
     }
 
     const { email, password } = validation.data;
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
     if (!user) {
       return NextResponse.json({ success: false, error: 'Invalid email or password' }, { status: 401 });
     }
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
     }
 
     const token = signToken({
-      userId: user._id.toString(),
+      userId: user.id,
       email: user.email,
       name: user.name,
       role: 'CUSTOMER',
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
       message: 'Login successful',
       token,
       user: {
-        id: user._id.toString(),
+        id: user.id,
         name: user.name,
         email: user.email,
         role: 'CUSTOMER',

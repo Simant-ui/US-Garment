@@ -10,7 +10,11 @@ async function seedAdmin() {
     const { default: AdminUser } = await import('../src/models/AdminUser');
     const { hashPassword } = await import('../src/lib/auth');
 
-    await connectDB();
+    const db = await connectDB();
+    if (!db) {
+      console.error('❌ MongoDB Atlas connection failed. Please check your MONGODB_URI username/password and Atlas Network Access.');
+      process.exit(1);
+    }
     const email = process.env.ADMIN_EMAIL || 'admin@usdresses.com.np';
     const password = process.env.ADMIN_PASSWORD || 'AdminGarmentUS2026!';
 
