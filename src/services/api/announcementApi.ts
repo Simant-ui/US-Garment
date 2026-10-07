@@ -4,6 +4,7 @@ export interface BilingualText {
 }
 
 export interface AnnouncementData {
+  id?: string;
   _id?: string;
   internalName: string;
   type: 'general' | 'holiday' | 'important' | 'offer' | 'delivery' | 'maintenance' | 'custom';

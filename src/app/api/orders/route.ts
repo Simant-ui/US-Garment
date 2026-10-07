@@ -92,12 +92,26 @@ export async function POST(req: NextRequest) {
     const orderItemsData = [];
 
     for (const item of items) {
-      const dbProduct = await prisma.product.findFirst({
-        where: { OR: [{ id: item.productId }, { slug: item.productId }] },
-      });
+      const searchConditions: any[] = [];
+      if (item.productId && item.productId !== 'undefined') {
+        searchConditions.push({ id: item.productId });
+        searchConditions.push({ slug: item.productId });
+      }
+      if (item.slug) {
+        searchConditions.push({ slug: item.slug });
+      }
+      if (item.name) {
+        searchConditions.push({ name: item.name });
+      }
+
+      const dbProduct = searchConditions.length > 0
+        ? await prisma.product.findFirst({
+            where: { OR: searchConditions },
+          })
+        : null;
 
       if (!dbProduct) {
-        return NextResponse.json({ success: false, error: `Product ${item.name || item.productId} no longer exists.` }, { status: 400 });
+        return NextResponse.json({ success: false, error: `Product "${item.name || item.productId || 'selected'}" is not available in stock.` }, { status: 400 });
       }
 
       const itemTotal = dbProduct.price * item.quantity;
@@ -135,11 +149,22 @@ export async function POST(req: NextRequest) {
 
     const orderNumber = `USD-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
 
+    let validUserId: string | null = null;
+    if (session?.userId) {
+      const existingUser = await prisma.user.findUnique({
+        where: { id: session.userId },
+        select: { id: true },
+      });
+      if (existingUser) {
+        validUserId = existingUser.id;
+      }
+    }
+
     const newOrder = await prisma.order.create({
       data: {
         orderNumber,
-        userId: session ? session.userId : null,
-        guestCustomer: !session
+        userId: validUserId,
+        guestCustomer: !validUserId
           ? {
               name: shippingAddress.fullName,
               email: shippingAddress.email,

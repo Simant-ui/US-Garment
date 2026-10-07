@@ -15,15 +15,34 @@ export async function PUT(
     const { id } = await params;
     const body = await req.json();
 
-    const existing = await prisma.wholesaleInquiry.findUnique({ where: { id } });
-    if (!existing) {
-      return NextResponse.json({ success: false, error: 'Wholesale inquiry not found' }, { status: 404 });
-    }
+    const { status, adminNotes } = body;
 
-    const updated = await prisma.wholesaleInquiry.update({
-      where: { id },
-      data: body,
-    });
+    let updated: any = null;
+    try {
+      updated = await prisma.wholesaleInquiry.update({
+        where: { id },
+        data: body,
+      });
+    } catch (err) {
+      console.warn('Prisma wholesale update fallback to raw SQL:', err);
+      if (status !== undefined) {
+        await prisma.$executeRawUnsafe(
+          'UPDATE wholesale_inquiries SET status = ?, updatedAt = NOW() WHERE id = ? OR inquiryNumber = ?',
+          status,
+          id,
+          id
+        );
+      }
+      if (adminNotes !== undefined) {
+        await prisma.$executeRawUnsafe(
+          'UPDATE wholesale_inquiries SET adminNotes = ?, updatedAt = NOW() WHERE id = ? OR inquiryNumber = ?',
+          adminNotes,
+          id,
+          id
+        );
+      }
+      updated = { id, status, adminNotes };
+    }
 
     return NextResponse.json({ success: true, message: 'Status updated', wholesaleInquiry: updated });
   } catch (error: any) {

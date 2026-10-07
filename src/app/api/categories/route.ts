@@ -22,9 +22,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    const { _id, id, createdAt, updatedAt, productCount, subcategories, parentCategory, icon, sortOrder, ...categoryData } = body;
 
     const category = await prisma.category.create({
-      data: body,
+      data: {
+        name: categoryData.name,
+        slug: categoryData.slug,
+        description: categoryData.description || null,
+        image: categoryData.image || null,
+      },
     });
     return NextResponse.json({ success: true, message: 'Category created', category }, { status: 201 });
   } catch (error: any) {

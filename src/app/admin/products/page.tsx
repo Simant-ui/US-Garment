@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Plus, Edit, Trash2, Search, Loader2 } from 'lucide-react';
 import { useAdminTheme } from '@/context/ThemeContext';
+import ImageUploader from '@/components/common/ImageUploader';
 
 export default function AdminProductsPage() {
   const { theme } = useAdminTheme();
@@ -27,8 +28,8 @@ export default function AdminProductsPage() {
     price: 1500,
     compareAtPrice: 1800,
     stock: 50,
-    thumbnail: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&q=80',
-    images: ['https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&q=80'],
+    thumbnail: '',
+    images: [] as string[],
     sizes: ['M', 'L', 'XL'],
     colors: ['Royal Green', 'Navy Blue'],
     isFeatured: true,
@@ -55,7 +56,7 @@ export default function AdminProductsPage() {
       if (dataC.success) {
         setCategories(dataC.categories || []);
         if (dataC.categories?.length > 0 && !formData.category) {
-          setFormData((prev) => ({ ...prev, category: dataC.categories[0]._id }));
+          setFormData((prev) => ({ ...prev, category: dataC.categories[0].id || dataC.categories[0]._id }));
         }
       }
     } catch (err) {
@@ -74,13 +75,19 @@ export default function AdminProductsPage() {
     setSaving(true);
 
     try {
+      const selectedCategory = formData.category || (categories[0]?.id || categories[0]?._id || '');
+      const payload = {
+        ...formData,
+        category: selectedCategory,
+      };
+
       const url = editingId ? `/api/products/${editingId}` : '/api/products';
       const method = editingId ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -116,12 +123,12 @@ export default function AdminProductsPage() {
       sku: `SKU-${Date.now().toString().slice(-4)}`,
       description: '',
       shortDescription: '',
-      category: categories[0]?._id || '',
+      category: categories[0]?.id || categories[0]?._id || '',
       price: 1500,
       compareAtPrice: 1800,
       stock: 50,
-      thumbnail: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&q=80',
-      images: ['https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&q=80'],
+      thumbnail: '',
+      images: [],
       sizes: ['M', 'L', 'XL'],
       colors: ['Royal Green', 'Navy Blue'],
       isFeatured: true,
@@ -135,14 +142,14 @@ export default function AdminProductsPage() {
   };
 
   const openEditModal = (p: any) => {
-    setEditingId(p._id);
+    setEditingId(p.id || p._id);
     setFormData({
       name: p.name,
       slug: p.slug,
       sku: p.sku,
       description: p.description,
       shortDescription: p.shortDescription,
-      category: typeof p.category === 'object' ? p.category._id : p.category,
+      category: typeof p.category === 'object' ? (p.category?.id || p.category?._id || '') : (p.categoryId || p.category || ''),
       price: p.price,
       compareAtPrice: p.compareAtPrice || p.price,
       stock: p.stock,
@@ -236,8 +243,8 @@ export default function AdminProductsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredProducts.map((p) => (
-                  <tr key={p._id} className={`transition-colors ${isDark ? 'hover:bg-[#101D32]' : 'hover:bg-[#F8FAFC]'}`}>
+                  filteredProducts.map((p) => (
+                    <tr key={p.id || p._id || p.slug} className={`transition-colors ${isDark ? 'hover:bg-[#101D32]' : 'hover:bg-[#F8FAFC]'}`}>
                     <td className="p-3 flex items-center gap-3">
                       <div className={`relative w-10 h-12 rounded-lg overflow-hidden border flex-shrink-0 ${
                         isDark ? 'bg-[#101D32] border-[#1E304A]' : 'bg-[#F8FAFC] border-[#E2E8F0]'
@@ -364,15 +371,16 @@ export default function AdminProductsPage() {
                     Category *
                   </label>
                   <select
-                    value={formData.category}
+                    value={formData.category || (categories[0]?.id || categories[0]?._id || '')}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className={`w-full rounded-xl p-2.5 font-medium border outline-none transition-all ${
                       isDark ? 'bg-[#101D32] border-[#1E304A] text-white' : 'bg-[#F8FAFC] border-[#E2E8F0] text-[#0F172A]'
                     }`}
                   >
-                    {categories.map((c) => (
-                      <option key={c._id} value={c._id}>{c.name}</option>
-                    ))}
+                    {categories.map((c) => {
+                      const catId = c.id || c._id;
+                      return <option key={catId} value={catId}>{c.name}</option>;
+                    })}
                   </select>
                 </div>
 
@@ -437,19 +445,12 @@ export default function AdminProductsPage() {
                 ></textarea>
               </div>
 
-              <div>
-                <label className={`block font-semibold mb-1 ${isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>
-                  Image URL
-                </label>
-                <input
-                  type="text"
-                  value={formData.thumbnail}
-                  onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value, images: [e.target.value] })}
-                  className={`w-full rounded-xl p-2.5 font-mono text-[11px] border outline-none transition-all ${
-                    isDark ? 'bg-[#101D32] border-[#1E304A] text-white' : 'bg-[#F8FAFC] border-[#E2E8F0] text-[#0F172A]'
-                  }`}
-                />
-              </div>
+              <ImageUploader
+                label="Product Image (Max 5 MB)"
+                required
+                value={formData.thumbnail}
+                onChange={(url) => setFormData({ ...formData, thumbnail: url, images: [url] })}
+              />
 
               <div className="flex gap-4 pt-2">
                 <label className={`flex items-center gap-2 font-medium cursor-pointer ${isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>

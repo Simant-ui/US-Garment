@@ -133,7 +133,7 @@ export default function AdminCouponsPage() {
         ) : (
           <div className={`divide-y text-xs ${isDark ? 'divide-[#1E304A]' : 'divide-[#E2E8F0]'}`}>
             {coupons.map((c) => (
-              <div key={c._id} className="py-3 flex justify-between items-center">
+              <div key={c.id || c._id || c.code} className="py-3 flex justify-between items-center">
                 <div>
                   <p className={`font-bold font-mono ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{c.code}</p>
                   <p className={`text-[11px] ${isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>

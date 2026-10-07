@@ -15,15 +15,34 @@ export async function PUT(
     const { id } = await params;
     const body = await req.json();
 
-    const existing = await prisma.customOrder.findUnique({ where: { id } });
-    if (!existing) {
-      return NextResponse.json({ success: false, error: 'Custom order request not found' }, { status: 404 });
-    }
+    const { status, adminNotes } = body;
 
-    const updated = await prisma.customOrder.update({
-      where: { id },
-      data: body,
-    });
+    let updated: any = null;
+    try {
+      updated = await prisma.customOrder.update({
+        where: { id },
+        data: body,
+      });
+    } catch (err) {
+      console.warn('Prisma custom order update fallback to raw SQL:', err);
+      if (status !== undefined) {
+        await prisma.$executeRawUnsafe(
+          'UPDATE custom_orders SET status = ?, updatedAt = NOW() WHERE id = ? OR requestNumber = ?',
+          status,
+          id,
+          id
+        );
+      }
+      if (adminNotes !== undefined) {
+        await prisma.$executeRawUnsafe(
+          'UPDATE custom_orders SET adminNotes = ?, updatedAt = NOW() WHERE id = ? OR requestNumber = ?',
+          adminNotes,
+          id,
+          id
+        );
+      }
+      updated = { id, status, adminNotes };
+    }
 
     return NextResponse.json({ success: true, message: 'Status updated', customOrder: updated });
   } catch (error: any) {

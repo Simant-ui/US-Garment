@@ -10,7 +10,8 @@ import { useLanguage } from '@/context/LanguageContext';
 
 export interface ProductCardProps {
   product: {
-    _id: string;
+    id?: string;
+    _id?: string;
     name: any;
     slug: string;
     price: number;
@@ -40,8 +41,9 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
   const [isHovered, setIsHovered] = useState(false);
   const [addedAnimation, setAddedAnimation] = useState(false);
 
-  const isLiked = isInWishlist(product._id);
-  const secondImage = product.images[1] || product.thumbnail;
+  const productId = product.id || product._id || product.slug;
+  const isLiked = isInWishlist(productId);
+  const secondImage = product.images?.[1] || product.thumbnail;
 
   const rawCatName = typeof product.category === 'object' ? product.category?.name : product.category;
   const categoryName = rawCatName ? getBilingualText(rawCatName) : t('nav.shop');
@@ -52,7 +54,7 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
     e.stopPropagation();
 
     addToCart({
-      productId: product._id,
+      productId: productId,
       name: productName,
       slug: product.slug,
       sku: product.slug.substring(0, 8).toUpperCase(),
@@ -111,7 +113,7 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
           onClick={(e) => {
             e.preventDefault();
             toggleWishlist({
-              productId: product._id,
+              productId: productId,
               name: productName,
               slug: product.slug,
               price: product.price,

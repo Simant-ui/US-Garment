@@ -85,7 +85,8 @@ export default function CheckoutPage() {
       }
 
       clearCart();
-      router.push(`/order-success/${data.order._id}`);
+      const targetOrderId = data.order?.id || data.order?.orderNumber || data.order?._id;
+      router.push(`/order-success/${targetOrderId}`);
     } catch (err: any) {
       setErrorMsg(err.message || t('systemMessages.somethingWentWrong'));
     } finally {

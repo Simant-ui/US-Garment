@@ -26,6 +26,7 @@ import {
   Tag as TagIcon,
 } from 'lucide-react';
 import { useAdminTheme } from '@/context/ThemeContext';
+import ImageUploader from '@/components/common/ImageUploader';
 import {
   getAnnouncements,
   createAnnouncement,
@@ -111,7 +112,7 @@ export default function AdminAnnouncementsPage() {
   };
 
   const handleOpenEditModal = (item: AnnouncementData) => {
-    setEditingId(item._id || null);
+    setEditingId(item.id || item._id || null);
     setFormData({
       ...item,
       startAt: item.startAt ? new Date(item.startAt).toISOString().slice(0, 16) : '',
@@ -121,9 +122,10 @@ export default function AdminAnnouncementsPage() {
   };
 
   const handleToggleStatus = async (item: AnnouncementData) => {
-    if (!item._id) return;
+    const itemId = item.id || item._id;
+    if (!itemId) return;
     try {
-      await updateAnnouncementStatus(item._id, !item.isActive);
+      await updateAnnouncementStatus(itemId, !item.isActive);
       setSuccessMsg(`Announcement "${item.internalName}" status updated.`);
       fetchAnnouncementsList();
     } catch (err: any) {
@@ -132,10 +134,11 @@ export default function AdminAnnouncementsPage() {
   };
 
   const handleDelete = async (item: AnnouncementData) => {
-    if (!item._id) return;
+    const itemId = item.id || item._id;
+    if (!itemId) return;
     if (!confirm(`Are you sure you want to delete "${item.internalName}"?`)) return;
     try {
-      await deleteAnnouncement(item._id);
+      await deleteAnnouncement(itemId);
       setSuccessMsg(`Announcement "${item.internalName}" deleted.`);
       fetchAnnouncementsList();
     } catch (err: any) {
@@ -327,7 +330,7 @@ export default function AdminAnnouncementsPage() {
                 </tr>
               ) : (
                 announcements.map((item) => (
-                  <tr key={item._id} className={isDark ? 'hover:bg-[#101D32]/50' : 'hover:bg-slate-50'}>
+                  <tr key={item.id || item._id} className={isDark ? 'hover:bg-[#101D32]/50' : 'hover:bg-slate-50'}>
                     <td className="py-3.5 px-4">
                       <div>
                         <p className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -671,14 +674,11 @@ export default function AdminAnnouncementsPage() {
                       <option value="once_only">Once Only</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold mb-1">Banner Image URL (Optional)</label>
-                    <input
-                      type="text"
-                      placeholder="https://... or /images/banner.jpg"
+                  <div className="col-span-1 md:col-span-2">
+                    <ImageUploader
+                      label="Banner Image (Optional)"
                       value={formData.image || ''}
-                      onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                      className={`w-full px-3 py-2 rounded-xl text-xs border outline-none ${isDark ? 'bg-[#101D32] border-[#1E304A]' : 'bg-slate-50 border-slate-200'}`}
+                      onChange={(url) => setFormData({ ...formData, image: url })}
                     />
                   </div>
                 </div>

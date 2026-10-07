@@ -1,7 +1,6 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import connectDB from '@/lib/mongodb';
-import Order from '@/models/Order';
+import prisma from '@/lib/prisma';
 import OrderSuccessPageClient from './OrderSuccessPageClient';
 
 interface OrderSuccessProps {
@@ -10,9 +9,20 @@ interface OrderSuccessProps {
 
 export default async function OrderSuccessPage({ params }: OrderSuccessProps) {
   const { orderId } = await params;
-  await connectDB();
 
-  const order = await Order.findById(orderId).lean();
+  if (!orderId || orderId === 'undefined') {
+    notFound();
+  }
+
+  const order = await prisma.order.findFirst({
+    where: {
+      OR: [{ id: orderId }, { orderNumber: orderId }],
+    },
+    include: {
+      items: true,
+    },
+  });
+
   if (!order) {
     notFound();
   }

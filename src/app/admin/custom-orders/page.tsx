@@ -84,27 +84,29 @@ export default function AdminCustomOrdersPage() {
                   </td>
                 </tr>
               ) : (
-                requests.map((r) => (
-                  <tr key={r._id} className={`transition-colors ${isDark ? 'hover:bg-[#101D32]' : 'hover:bg-[#F8FAFC]'}`}>
-                    <td className={`p-3.5 font-mono font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{r.requestNumber}</td>
-                    <td className="p-3.5">
-                      <p className={`font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{r.fullName}</p>
-                      <p className={`text-[10px] ${isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{r.mobileNumber}</p>
-                    </td>
-                    <td className={`p-3.5 font-semibold ${isDark ? 'text-[#10D990]' : 'text-[#10B981]'}`}>{r.garmentType}</td>
-                    <td className={`p-3.5 font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{r.quantity} pcs</td>
-                    <td className={`p-3.5 ${isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{r.deliveryLocation}</td>
-                    <td className="p-3.5">
-                      <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
-                        isDark ? 'bg-purple-950 text-purple-300' : 'bg-purple-50 text-purple-700'
-                      }`}>
-                        {r.status}
-                      </span>
-                    </td>
-                    <td className="p-3.5 text-right">
-                      <select
-                        value={r.status}
-                        onChange={(e) => handleUpdateStatus(r._id, e.target.value)}
+                requests.map((r) => {
+                  const rId = r.id || r._id || r.requestNumber;
+                  return (
+                    <tr key={rId} className={`transition-colors ${isDark ? 'hover:bg-[#101D32]' : 'hover:bg-[#F8FAFC]'}`}>
+                      <td className={`p-3.5 font-mono font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{r.requestNumber}</td>
+                      <td className="p-3.5">
+                        <p className={`font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{r.fullName}</p>
+                        <p className={`text-[10px] ${isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{r.mobileNumber || r.phone}</p>
+                      </td>
+                      <td className={`p-3.5 font-semibold ${isDark ? 'text-[#10D990]' : 'text-[#10B981]'}`}>{r.garmentType}</td>
+                      <td className={`p-3.5 font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{r.quantity} pcs</td>
+                      <td className={`p-3.5 ${isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{r.deliveryLocation}</td>
+                      <td className="p-3.5">
+                        <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                          isDark ? 'bg-purple-950 text-purple-300' : 'bg-purple-50 text-purple-700'
+                        }`}>
+                          {r.status}
+                        </span>
+                      </td>
+                      <td className="p-3.5 text-right">
+                        <select
+                          value={r.status}
+                          onChange={(e) => handleUpdateStatus(rId, e.target.value)}
                         className={`rounded-xl p-2 font-bold text-[11px] border outline-none transition-all ${
                           isDark ? 'bg-[#101D32] border-[#1E304A] text-white' : 'bg-[#F8FAFC] border-[#E2E8F0] text-[#0F172A]'
                         }`}
@@ -115,7 +117,8 @@ export default function AdminCustomOrdersPage() {
                       </select>
                     </td>
                   </tr>
-                ))
+                );
+              })
               )}
             </tbody>
           </table>

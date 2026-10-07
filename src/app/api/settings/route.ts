@@ -31,16 +31,17 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
+    const { _id, id, createdAt, updatedAt, ...updateData } = body;
 
     let settings = await prisma.siteSettings.findFirst();
     if (settings) {
       settings = await prisma.siteSettings.update({
         where: { id: settings.id },
-        data: body,
+        data: updateData,
       });
     } else {
       settings = await prisma.siteSettings.create({
-        data: body,
+        data: updateData,
       });
     }
 

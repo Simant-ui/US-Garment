@@ -97,12 +97,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: validation.error.issues[0].message }, { status: 400 });
     }
 
-    const { categoryId, category, ...productData } = validation.data as any;
+    const {
+      categoryId,
+      category,
+      variants,
+      subCategory,
+      seoTitle,
+      seoDescription,
+      _id,
+      id,
+      ...productData
+    } = validation.data as any;
+
+    let validCategoryId = categoryId;
+    if (!validCategoryId && category) {
+      const foundCategory = await prisma.category.findFirst({
+        where: { OR: [{ id: category }, { slug: category }] },
+      });
+      if (foundCategory) {
+        validCategoryId = foundCategory.id;
+      }
+    }
 
     const newProduct = await prisma.product.create({
       data: {
         ...productData,
-        categoryId: categoryId || (category ? category._id : undefined),
+        categoryId: validCategoryId || null,
       },
     });
 

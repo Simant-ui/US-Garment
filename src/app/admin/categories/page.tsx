@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Plus, Loader2, FolderTree } from 'lucide-react';
+import { Plus, Loader2, FolderTree, Trash2 } from 'lucide-react';
 import { useAdminTheme } from '@/context/ThemeContext';
+import ImageUploader from '@/components/common/ImageUploader';
 
 export default function AdminCategoriesPage() {
   const { theme } = useAdminTheme();
@@ -12,6 +13,8 @@ export default function AdminCategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [image, setImage] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -38,15 +41,37 @@ export default function AdminCategoriesPage() {
       const res = await fetch('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, slug, description }),
+        body: JSON.stringify({ name, slug, description, image }),
       });
       if (res.ok) {
         setName('');
         setDescription('');
+        setImage('');
         fetchCategories();
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleDelete = async (id: string, catName: string) => {
+    if (!confirm(`Are you sure you want to delete category "${catName}"?`)) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/categories/${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchCategories();
+      } else {
+        alert(data.error || 'Failed to delete category');
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Delete error');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -108,6 +133,15 @@ export default function AdminCategoriesPage() {
             />
           </div>
         </div>
+
+        <div>
+          <ImageUploader
+            label="Category Header Image (Max 5 MB)"
+            value={image}
+            onChange={(url) => setImage(url)}
+          />
+        </div>
+
         <button
           type="submit"
           className={`px-5 py-2.5 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md transition-all ${
@@ -142,19 +176,48 @@ export default function AdminCategoriesPage() {
           </div>
         ) : (
           <div className={`divide-y text-xs ${isDark ? 'divide-[#1E304A]' : 'divide-[#E2E8F0]'}`}>
-            {categories.map((c) => (
-              <div key={c._id} className="py-3 flex justify-between items-center">
-                <div>
-                  <p className={`font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{c.name}</p>
-                  <p className={`text-[11px] ${isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>Slug: /{c.slug}</p>
+            {categories.map((c) => {
+              const catId = c.id || c._id;
+              const isDeleting = deletingId === catId;
+
+              return (
+                <div key={catId} className="py-3 flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    {c.image && (
+                      <img
+                        src={c.image}
+                        alt={c.name}
+                        className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-800"
+                      />
+                    )}
+                    <div>
+                      <p className={`font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{c.name}</p>
+                      <p className={`text-[11px] ${isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>Slug: /{c.slug}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                      isDark ? 'bg-[#064E3B] text-[#10D990]' : 'bg-[#ECFDF5] text-[#10B981]'
+                    }`}>
+                      Active
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(catId, c.name)}
+                      disabled={isDeleting}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                      title="Delete Category"
+                    >
+                      {isDeleting ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
-                  isDark ? 'bg-[#064E3B] text-[#10D990]' : 'bg-[#ECFDF5] text-[#10B981]'
-                }`}>
-                  Active
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

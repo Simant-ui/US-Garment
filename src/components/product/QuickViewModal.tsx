@@ -24,7 +24,8 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
 
-  const isLiked = isInWishlist(product._id);
+  const productId = product.id || product._id || product.slug;
+  const isLiked = isInWishlist(productId);
   const productName = getBilingualText(product.name);
   const productDesc = getBilingualText(product.shortDescription || product.description);
   const rawCatName = typeof product.category === 'object' ? product.category?.name : product.category;
@@ -32,7 +33,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
 
   const handleAddToCart = () => {
     addToCart({
-      productId: product._id,
+      productId: productId,
       name: productName,
       slug: product.slug,
       sku: product.sku || product.slug.substring(0, 8).toUpperCase(),
@@ -207,7 +208,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
               <button
                 onClick={() =>
                   toggleWishlist({
-                    productId: product._id,
+                    productId: productId,
                     name: productName,
                     slug: product.slug,
                     price: product.price,

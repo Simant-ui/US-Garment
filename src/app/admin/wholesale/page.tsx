@@ -84,27 +84,29 @@ export default function AdminWholesalePage() {
                   </td>
                 </tr>
               ) : (
-                inquiries.map((w) => (
-                  <tr key={w._id} className={`transition-colors ${isDark ? 'hover:bg-[#101D32]' : 'hover:bg-[#F8FAFC]'}`}>
-                    <td className={`p-3.5 font-mono font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{w.inquiryNumber}</td>
-                    <td className={`p-3.5 font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{w.organizationName}</td>
-                    <td className="p-3.5">
-                      <p className={`font-semibold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{w.contactPerson}</p>
-                      <p className={`text-[10px] ${isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{w.phone}</p>
-                    </td>
-                    <td className={`p-3.5 font-semibold ${isDark ? 'text-[#10D990]' : 'text-[#10B981]'}`}>{w.productType}</td>
-                    <td className={`p-3.5 font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{w.estimatedQuantity} units</td>
-                    <td className="p-3.5">
-                      <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
-                        isDark ? 'bg-amber-950 text-amber-300' : 'bg-amber-50 text-amber-700'
-                      }`}>
-                        {w.status}
-                      </span>
-                    </td>
-                    <td className="p-3.5 text-right">
-                      <select
-                        value={w.status}
-                        onChange={(e) => handleUpdateStatus(w._id, e.target.value)}
+                inquiries.map((w) => {
+                  const wId = w.id || w._id || w.inquiryNumber;
+                  return (
+                    <tr key={wId} className={`transition-colors ${isDark ? 'hover:bg-[#101D32]' : 'hover:bg-[#F8FAFC]'}`}>
+                      <td className={`p-3.5 font-mono font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{w.inquiryNumber}</td>
+                      <td className={`p-3.5 font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{w.organizationName}</td>
+                      <td className="p-3.5">
+                        <p className={`font-semibold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{w.contactPerson}</p>
+                        <p className={`text-[10px] ${isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>{w.phone}</p>
+                      </td>
+                      <td className={`p-3.5 font-semibold ${isDark ? 'text-[#10D990]' : 'text-[#10B981]'}`}>{w.productType}</td>
+                      <td className={`p-3.5 font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{w.estimatedQuantity} units</td>
+                      <td className="p-3.5">
+                        <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
+                          isDark ? 'bg-amber-950 text-amber-300' : 'bg-amber-50 text-amber-700'
+                        }`}>
+                          {w.status}
+                        </span>
+                      </td>
+                      <td className="p-3.5 text-right">
+                        <select
+                          value={w.status}
+                          onChange={(e) => handleUpdateStatus(wId, e.target.value)}
                         className={`rounded-xl p-2 font-bold text-[11px] border outline-none transition-all ${
                           isDark ? 'bg-[#101D32] border-[#1E304A] text-white' : 'bg-[#F8FAFC] border-[#E2E8F0] text-[#0F172A]'
                         }`}
@@ -115,7 +117,8 @@ export default function AdminWholesalePage() {
                       </select>
                     </td>
                   </tr>
-                ))
+                );
+              })
               )}
             </tbody>
           </table>

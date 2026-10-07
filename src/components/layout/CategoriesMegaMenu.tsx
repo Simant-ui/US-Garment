@@ -179,12 +179,14 @@ export default function CategoriesMegaMenu() {
 
               <div className="space-y-1">
                 {categories.map((cat) => {
-                  const isSelected = activeCategory._id === cat._id;
+                  const catId = cat.id || cat._id;
+                  const activeCatId = activeCategory.id || activeCategory._id;
+                  const isSelected = activeCatId === catId;
                   const name = getCategoryName(cat);
 
                   return (
                     <button
-                      key={cat._id}
+                      key={catId}
                       onMouseEnter={() => setActiveCategory(cat)}
                       onClick={() => {
                         setIsOpen(false);
@@ -251,7 +253,7 @@ export default function CategoriesMegaMenu() {
 
                       return (
                         <Link
-                          key={sub._id}
+                          key={sub.id || sub._id}
                           href={`/shop?category=${sub.slug}`}
                           onClick={() => setIsOpen(false)}
                           className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-[#ECFDF5]/50 transition-all group"

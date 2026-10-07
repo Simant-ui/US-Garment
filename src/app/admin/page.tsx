@@ -220,7 +220,7 @@ export default function AdminDashboardPage() {
           {recentOrders.length > 0 ? (
             <div className="divide-y text-xs">
               {recentOrders.map((o: any) => (
-                <div key={o._id} className="py-3 flex justify-between items-center">
+                <div key={o.id || o._id || o.orderNumber} className="py-3 flex justify-between items-center">
                   <div>
                     <p className={`font-bold font-mono ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>#{o.orderNumber}</p>
                     <p className={isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'}>{o.shippingAddress?.fullName}</p>
@@ -273,7 +273,7 @@ export default function AdminDashboardPage() {
           {recentCustom.length > 0 ? (
             <div className="divide-y text-xs">
               {recentCustom.map((c: any) => (
-                <div key={c._id} className="py-3 flex justify-between items-center">
+                <div key={c.id || c._id || c.requestNumber} className="py-3 flex justify-between items-center">
                   <div>
                     <p className={`font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>{c.fullName}</p>
                     <p className={isDark ? 'text-[#94A3B8]' : 'text-[#64748B]'}>{c.garmentType} ({c.quantity} pcs)</p>

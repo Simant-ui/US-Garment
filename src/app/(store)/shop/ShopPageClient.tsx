@@ -97,7 +97,7 @@ export default function ShopPageClient({
                 const cName = getBilingualText(c.name);
                 return (
                   <Link
-                    key={c._id}
+                    key={c.id || c._id || c.slug}
                     href={`/shop?category=${c.slug}`}
                     className={`block px-3 py-2 rounded-lg font-medium transition-colors ${
                       categorySlug === c.slug ? 'bg-[#E6F4EE] text-[#0F4C3A] font-bold' : 'text-slate-600 hover:bg-slate-50'

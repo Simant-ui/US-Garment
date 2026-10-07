@@ -14,7 +14,7 @@ export default function AnnouncementPopup() {
   const [dontShowAgain, setDontShowAgain] = useState<boolean>(false);
 
   const checkFrequencyAndShow = useCallback((announcement: AnnouncementData) => {
-    const id = announcement._id;
+    const id = announcement.id || announcement._id;
     if (!id) return false;
 
     const now = Date.now();
@@ -56,7 +56,8 @@ export default function AnnouncementPopup() {
             if (isMounted) {
               setActiveAnnouncement(item);
               setIsOpen(true);
-              trackAnnouncementEvent(item._id!, 'view');
+              const itemId = item.id || item._id;
+              if (itemId) trackAnnouncementEvent(itemId, 'view');
             }
             break;
           }
@@ -74,12 +75,12 @@ export default function AnnouncementPopup() {
   }, [checkFrequencyAndShow]);
 
   const handleClose = useCallback(() => {
-    if (!activeAnnouncement || !activeAnnouncement._id) {
+    const id = activeAnnouncement?.id || activeAnnouncement?._id;
+    if (!activeAnnouncement || !id) {
       setIsOpen(false);
       return;
     }
 
-    const id = activeAnnouncement._id;
     const frequency = activeAnnouncement.displayFrequency;
     const now = Date.now();
 
@@ -134,8 +135,9 @@ export default function AnnouncementPopup() {
     : activeAnnouncement.ctaText?.en || activeAnnouncement.ctaText?.ne || 'Got It';
 
   const handleCtaClick = () => {
-    if (activeAnnouncement._id) {
-      trackAnnouncementEvent(activeAnnouncement._id, 'click');
+    const annId = activeAnnouncement.id || activeAnnouncement._id;
+    if (annId) {
+      trackAnnouncementEvent(annId, 'click');
     }
     handleClose();
   };

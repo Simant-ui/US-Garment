@@ -20,7 +20,8 @@ export default function ProductDetailActions({ product }: { product: any }) {
   const [added, setAdded] = useState(false);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
 
-  const isLiked = isInWishlist(product._id);
+  const productId = product.id || product._id || product.slug;
+  const isLiked = isInWishlist(productId);
   const productName = getBilingualText(product.name);
 
   // Variant inventory lookup
@@ -31,7 +32,7 @@ export default function ProductDetailActions({ product }: { product: any }) {
 
   const handleAddToCart = () => {
     addToCart({
-      productId: product._id,
+      productId: productId,
       name: productName,
       slug: product.slug,
       sku: currentVariant?.sku || product.sku,
@@ -167,7 +168,7 @@ export default function ProductDetailActions({ product }: { product: any }) {
             type="button"
             onClick={() =>
               toggleWishlist({
-                productId: product._id,
+                productId: productId,
                 name: productName,
                 slug: product.slug,
                 price: product.price,

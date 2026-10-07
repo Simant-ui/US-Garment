@@ -68,9 +68,36 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
     }
 
+    const {
+      categoryId,
+      category,
+      variants,
+      subCategory,
+      seoTitle,
+      seoDescription,
+      _id,
+      id,
+      createdAt,
+      updatedAt,
+      ...updateData
+    } = body;
+
+    let validCategoryId = categoryId;
+    if (!validCategoryId && category) {
+      const foundCategory = await prisma.category.findFirst({
+        where: { OR: [{ id: category }, { slug: category }] },
+      });
+      if (foundCategory) {
+        validCategoryId = foundCategory.id;
+      }
+    }
+
     const updatedProduct = await prisma.product.update({
       where: { id: existingProduct.id },
-      data: body,
+      data: {
+        ...updateData,
+        ...(validCategoryId !== undefined ? { categoryId: validCategoryId } : {}),
+      },
     });
 
     return NextResponse.json({ success: true, message: 'Product updated successfully', product: updatedProduct });

@@ -70,7 +70,7 @@ export default function CustomerOrdersPage() {
               </div>
 
               <Link
-                href={`/order-success/${order._id}`}
+                href={`/order-success/${order.id || order.orderNumber || order._id}`}
                 className="inline-block text-xs font-bold text-[#0F4C3A] hover:underline"
               >
                 {t('account.viewDetails')} →

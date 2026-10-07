@@ -4,7 +4,8 @@ export interface BilingualCategoryName {
 }
 
 export interface CategoryData {
-  _id: string;
+  id?: string;
+  _id?: string;
   name: BilingualCategoryName | string;
   slug: string;
   description?: BilingualCategoryName | string;

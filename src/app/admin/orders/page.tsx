@@ -95,7 +95,7 @@ export default function AdminOrdersPage() {
                 </tr>
               ) : (
                 orders.map((o) => (
-                  <tr key={o._id} className={`transition-colors ${isDark ? 'hover:bg-[#101D32]' : 'hover:bg-[#F8FAFC]'}`}>
+                  <tr key={o.id || o._id || o.orderNumber} className={`transition-colors ${isDark ? 'hover:bg-[#101D32]' : 'hover:bg-[#F8FAFC]'}`}>
                     <td className={`p-3.5 font-mono font-bold ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
                       #{o.orderNumber}
                     </td>
@@ -208,7 +208,7 @@ export default function AdminOrdersPage() {
                     ))}
                   </select>
                   <button
-                    onClick={() => handleUpdateStatus(selectedOrder._id, newStatus)}
+                    onClick={() => handleUpdateStatus(selectedOrder.id || selectedOrder._id || selectedOrder.orderNumber, newStatus)}
                     disabled={updating}
                     className={`px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm ${
                       isDark ? 'bg-[#10D990] text-[#050B18] hover:bg-[#0EB87B]' : 'bg-[#10B981] text-white hover:bg-[#059669]'

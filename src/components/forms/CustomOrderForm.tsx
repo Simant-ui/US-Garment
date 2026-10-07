@@ -36,11 +36,18 @@ export default function CustomOrderForm() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    setErrorMsg('');
     setUploading(true);
     try {
       const newUrls: string[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+
+        if (file.size > 5 * 1024 * 1024) {
+          setErrorMsg('Image size exceeds 5 MB limit. Please select a smaller image.');
+          continue;
+        }
+
         const reader = new FileReader();
         const base64 = await new Promise<string>((resolve) => {
           reader.onload = () => resolve(reader.result as string);
@@ -55,11 +62,14 @@ export default function CustomOrderForm() {
         const data = await res.json();
         if (data.success && data.url) {
           newUrls.push(data.url);
+        } else if (data.error) {
+          setErrorMsg(data.error);
         }
       }
       setReferenceImages((prev) => [...prev, ...newUrls]);
-    } catch (err) {
+    } catch (err: any) {
       console.error('File upload failed:', err);
+      setErrorMsg(err?.message || 'File upload failed');
     } finally {
       setUploading(false);
     }

@@ -186,43 +186,48 @@ model OrderItem {
 }
 
 model CustomOrder {
-  id              String   @id @default(cuid())
-  requestNumber   String   @unique
-  fullName        String
-  phone           String
-  email           String
-  garmentType     String
-  gender          String
-  measurements    Json
-  preferredFabric String?
-  referenceImages Json?
-  customNotes     String?  @db.Text
-  estimatedBudget Float?
-  status          String   @default("New")
-  adminNotes      String?  @db.Text
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                String   @id @default(cuid())
+  requestNumber     String   @unique
+  fullName          String
+  phone             String
+  email             String
+  garmentType       String
+  gender            String?
+  measurements      Json?
+  quantity          Int      @default(1)
+  size              String?
+  color             String?
+  fabricPreference  String?
+  designRequirement String?  @db.Text
+  deliveryLocation  String?
+  requiredDate      String?
+  additionalMessage String?  @db.Text
+  referenceImages   Json?
+  status            String   @default("New")
+  adminNotes        String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@map("custom_orders")
 }
 
 model WholesaleInquiry {
-  id                 String   @id @default(cuid())
-  inquiryNumber      String   @unique
-  businessName       String
-  contactPerson      String
-  email              String
-  phone              String
-  address            String?
-  productCategories  Json
-  estimatedQuantity  Int
-  timeline           String?
-  targetPricePerUnit Float?
-  additionalNotes    String?  @db.Text
-  status             String   @default("New")
-  adminNotes         String?  @db.Text
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                String   @id @default(cuid())
+  inquiryNumber     String   @unique
+  organizationName  String
+  contactPerson     String
+  email             String
+  phone             String
+  location          String?
+  productType       String
+  estimatedQuantity Int
+  budgetRange       String?
+  requiredDate      String?
+  description       String?  @db.Text
+  status            String   @default("New")
+  adminNotes        String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@map("wholesale_inquiries")
 }
