@@ -71,7 +71,7 @@ export default function Header() {
       ],
     },
     {
-      name: isNe ? 'विद्यालय पोशाक' : 'School Uniform',
+      name: isNe ? 'स्कुल हाउस ड्रेस' : 'School Uniform',
       slug: 'school-uniform',
       subcategories: [
         { name: isNe ? 'केटाकेटीको पोसाक' : 'Boys Uniform', slug: 'boys-uniform' },
@@ -150,9 +150,8 @@ export default function Header() {
 
       {/* Main Header Container */}
       <div
-        className={`bg-white transition-all duration-300 ${
-          isScrolled ? 'shadow-md py-3' : 'py-3.5 border-b border-slate-100 shadow-sm'
-        }`}
+        className={`bg-white transition-all duration-300 ${isScrolled ? 'shadow-md py-3' : 'py-3.5 border-b border-slate-100 shadow-sm'
+          }`}
       >
         <div className="container mx-auto px-4 flex items-center justify-between">
           {/* Mobile Hamburger */}
@@ -172,9 +171,8 @@ export default function Header() {
             {/* Home link */}
             <Link
               href="/"
-              className={`transition-colors py-1.5 relative whitespace-nowrap font-devanagari ${
-                pathname === '/' ? 'text-[#0F4C3A] font-bold' : 'hover:text-[#0F4C3A]'
-              }`}
+              className={`transition-colors py-1.5 relative whitespace-nowrap font-devanagari ${pathname === '/' ? 'text-[#0F4C3A] font-bold' : 'hover:text-[#0F4C3A]'
+                }`}
             >
               {t('nav.home')}
               {pathname === '/' && (
@@ -192,9 +190,8 @@ export default function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`transition-colors py-1.5 relative whitespace-nowrap font-devanagari ${
-                    isActive ? 'text-[#0F4C3A] font-bold' : 'hover:text-[#0F4C3A]'
-                  }`}
+                  className={`transition-colors py-1.5 relative whitespace-nowrap font-devanagari ${isActive ? 'text-[#0F4C3A] font-bold' : 'hover:text-[#0F4C3A]'
+                    }`}
                 >
                   {link.name}
                   {isActive && (
@@ -311,9 +308,8 @@ export default function Header() {
                 <Link
                   href="/"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`text-sm font-semibold py-2.5 px-3 rounded-lg transition-colors font-devanagari ${
-                    pathname === '/' ? 'bg-[#E6F4EE] text-[#0F4C3A]' : 'text-[#10233F] hover:bg-slate-50'
-                  }`}
+                  className={`text-sm font-semibold py-2.5 px-3 rounded-lg transition-colors font-devanagari ${pathname === '/' ? 'bg-[#E6F4EE] text-[#0F4C3A]' : 'text-[#10233F] hover:bg-slate-50'
+                    }`}
                 >
                   {t('nav.home')}
                 </Link>
@@ -365,11 +361,10 @@ export default function Header() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`text-sm font-semibold py-2.5 px-3 rounded-lg transition-colors font-devanagari ${
-                      pathname === link.href
+                    className={`text-sm font-semibold py-2.5 px-3 rounded-lg transition-colors font-devanagari ${pathname === link.href
                         ? 'bg-[#E6F4EE] text-[#0F4C3A]'
                         : 'text-[#10233F] hover:bg-slate-50'
-                    }`}
+                      }`}
                   >
                     {link.name}
                   </Link>

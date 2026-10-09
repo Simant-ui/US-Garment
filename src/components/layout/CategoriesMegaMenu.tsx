@@ -32,7 +32,7 @@ const DEFAULT_CATEGORIES: CategoryData[] = [
   },
   {
     _id: 'cat-school',
-    name: { en: 'School Uniform', ne: 'विद्यालय पोशाक' },
+    name: { en: 'School Uniform', ne: 'स्कुल हाउस ड्रेस' },
     slug: 'school-uniform',
     icon: '🎓',
     image: '',
@@ -148,11 +148,10 @@ export default function CategoriesMegaMenu() {
       {/* Prominent Categories Navbar Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`h-11 px-4 rounded-[10px] font-bold text-xs xl:text-sm flex items-center gap-2.5 transition-all shadow-sm ${
-          isOpen
+        className={`h-11 px-4 rounded-[10px] font-bold text-xs xl:text-sm flex items-center gap-2.5 transition-all shadow-sm ${isOpen
             ? 'bg-[#047857] text-white shadow-md'
             : 'bg-[#065F46] hover:bg-[#047857] text-white'
-        }`}
+          }`}
         aria-expanded={isOpen}
       >
         <LayoutGrid className="w-4 h-4 text-white" />
@@ -160,9 +159,8 @@ export default function CategoriesMegaMenu() {
           {isNe ? 'वर्गहरू' : 'Categories'}
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-emerald-200 transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-white' : ''
-          }`}
+          className={`w-4 h-4 text-emerald-200 transition-transform duration-200 ${isOpen ? 'rotate-180 text-white' : ''
+            }`}
         />
       </button>
 
@@ -191,11 +189,10 @@ export default function CategoriesMegaMenu() {
                       onClick={() => {
                         setIsOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs xl:text-sm font-semibold transition-all font-devanagari ${
-                        isSelected
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs xl:text-sm font-semibold transition-all font-devanagari ${isSelected
                           ? 'bg-[#ECFDF5] text-[#0F172A] font-bold border-l-4 border-[#047857] shadow-sm'
                           : 'text-[#334155] hover:bg-white hover:text-[#0F172A]'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-2.5 truncate">
                         <span className="text-base leading-none">
@@ -204,9 +201,8 @@ export default function CategoriesMegaMenu() {
                         <span className="truncate">{name}</span>
                       </div>
                       <ChevronRight
-                        className={`w-4 h-4 transition-transform ${
-                          isSelected ? 'text-[#047857] translate-x-0.5' : 'text-slate-400'
-                        }`}
+                        className={`w-4 h-4 transition-transform ${isSelected ? 'text-[#047857] translate-x-0.5' : 'text-slate-400'
+                          }`}
                       />
                     </button>
                   );

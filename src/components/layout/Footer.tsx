@@ -71,11 +71,21 @@ export default function Footer() {
               <MapPin className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
               <span>{t('pages.contact.addressDesc')}</span>
             </div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <Phone className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <a href={`tel:${SITE_CONFIG.phone}`} className="hover:text-emerald-400 transition-colors">
-                {SITE_CONFIG.phone} / {SITE_CONFIG.secondaryPhone}
-              </a>
+              <div className="flex flex-wrap items-center gap-x-2 text-xs">
+                <a href={`tel:${SITE_CONFIG.phone}`} className="hover:text-emerald-400 transition-colors">
+                  {SITE_CONFIG.phone}
+                </a>
+                <span className="text-slate-600">/</span>
+                <a href={`tel:${SITE_CONFIG.secondaryPhone}`} className="hover:text-emerald-400 transition-colors">
+                  {SITE_CONFIG.secondaryPhone}
+                </a>
+                <span className="text-slate-600">/</span>
+                <a href={`tel:${SITE_CONFIG.thirdPhone}`} className="hover:text-emerald-400 transition-colors">
+                  {SITE_CONFIG.thirdPhone}
+                </a>
+              </div>
             </div>
             <div className="flex items-center gap-2.5">
               <Mail className="w-4 h-4 text-emerald-400 flex-shrink-0" />

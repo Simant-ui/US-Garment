@@ -32,6 +32,7 @@ export default function ContactPageClient() {
           <h3 className="font-bold text-slate-900 text-sm">{t('pages.contact.phoneTitle')}</h3>
           <p className="text-xs text-slate-600">{SITE_CONFIG.phone}</p>
           <p className="text-xs text-slate-600">{SITE_CONFIG.secondaryPhone}</p>
+          <p className="text-xs text-slate-600">{SITE_CONFIG.thirdPhone}</p>
           <a href={`https://wa.me/${SITE_CONFIG.whatsapp}`} target="_blank" rel="noreferrer" className="text-xs font-bold text-emerald-600 hover:underline flex items-center gap-1 pt-1">
             <MessageCircle className="w-3.5 h-3.5" /> {t('topBar.whatsappUs')}
           </a>

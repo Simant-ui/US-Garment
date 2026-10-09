@@ -726,7 +726,7 @@ export const translations: Record<Language, Translations> = {
 
   ne: {
     topBar: {
-      announcement: 'गुणस्तरीय पोशाक, विश्वास हाम्रो शान | विद्यालय पोशाक • घरायसी पोशाक • महिला पहिरन • थोक बिक्री',
+      announcement: 'गुणस्तरीय पोशाक, विश्वास हाम्रो शान | स्कुल हाउस ड्रेस • घरायसी पोशाक • महिला पहिरन • थोक बिक्री',
       whatsappUs: 'व्हाट्सएप सन्देश',
       callUs: 'हामीलाई सम्पर्क गर्नुहोस्',
       location: 'हेटौंडा, नेपाल',
@@ -734,7 +734,7 @@ export const translations: Record<Language, Translations> = {
     nav: {
       home: 'गृहपृष्ठ',
       women: 'महिला',
-      schoolUniform: 'विद्यालय पोशाक',
+      schoolUniform: 'स्कुल हाउस ड्रेस',
       houseDress: 'घरायसी पोशाक',
       tShirts: 'टी-सर्ट',
       dresses: 'पोशाक',
@@ -755,7 +755,7 @@ export const translations: Record<Language, Translations> = {
     home: {
       heroBadge: 'यूएस ड्रेसेस एण्ड गार्मेन्ट उद्योग • हेटौंडा, नेपाल',
       heroTitle: 'गुणस्तरीय पोशाक,\nविश्वास हाम्रो शान',
-      heroSubtitle: 'हेटौंडा, नेपालको प्रमुख गार्मेन्ट उद्योग। विद्यालय पोशाक, घरायसी कपडा, कस्टम सिलाइ र थोक आपूर्तिमा विशेष expertise।',
+      heroSubtitle: 'हेटौंडा, नेपालको प्रमुख गार्मेन्ट उद्योग। स्कुल हाउस ड्रेस, घरायसी कपडा, कस्टम सिलाइ र थोक आपूर्तिमा विशेष expertise।',
       shopCollection: 'सङ्ग्रह हेर्नुहोस्',
       customOrderBtn: 'कस्टम सिलाइ अर्डर',
       wholesaleBtn: 'थोक बिक्री सोधपुछ',
@@ -1011,7 +1011,7 @@ export const translations: Record<Language, Translations> = {
       removedFromWishlist: 'इच्छासूचीबाट हटाइयो।',
     },
     footer: {
-      brandDesc: 'हेटौंडा, नेपालको प्रमुख गार्मेन्ट उद्योग। उत्कृष्ट विद्यालय पोशाक, घरायसी कपडा, कस्टम सिलाइ र थोक आपूर्ति।',
+      brandDesc: 'हेटौंडा, नेपालको प्रमुख गार्मेन्ट उद्योग। उत्कृष्ट स्कुल हाउस ड्रेस, घरायसी कपडा, कस्टम सिलाइ र थोक आपूर्ति।',
       quickLinks: 'छिटो लिङ्कहरू',
       categories: 'श्रेणीहरू',
       customerService: 'ग्राहक सेवा',
@@ -1026,7 +1026,7 @@ export const translations: Record<Language, Translations> = {
         storyTitle: 'हाम्रो यात्रा',
         storyDesc: 'हेटौंडा, मकवानपुरमा स्थापित यूएस ड्रेसेस एण्ड गार्मेन्ट उद्योगले सानो सिलाइ पसलबाट सुरु भई आज नेपालभरिका विद्यालय, संस्था र परिवारहरूलाई गुणस्तरीय कपडा उपलब्ध गराउँदै आएको छ।',
         missionTitle: 'हाम्रो लक्ष्य',
-        missionDesc: 'टिकाउ, आरामदायी र किफायती कपडाहरू उत्कृष्ट सिलाइ र मिलाएर उपलब्ध गराउनु।',
+        missionDesc: 'टिकाउ,आरामदायी र भरपर्दाे कपडाहरू उत्कृष्ट सिलाईकाे साथै उचित मूल्यमा उपलब्ध गराउनु ।',
       },
       contact: {
         title: 'हामीलाई सम्पर्क गर्नुहोस्',
@@ -1069,7 +1069,7 @@ export const translations: Record<Language, Translations> = {
     },
     categories: {
       'women': 'महिला',
-      'school-uniform': 'विद्यालय पोशाक',
+      'school-uniform': 'स्कुल हाउस ड्रेस',
       'house-dress': 'घरायसी पोशाक',
       't-shirts': 'टी-सर्ट',
       'dresses': 'पोशाक',
