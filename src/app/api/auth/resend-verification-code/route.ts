@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import PendingUser from '@/models/PendingUser';
+import prisma from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
 import { sendOtpEmail } from '@/lib/mailer';
 import { resendOtpSchema } from '@/validations/auth.schema';
 
 export async function POST(req: NextRequest) {
   try {
-    await connectDB();
     const body = await req.json();
 
     const validation = resendOtpSchema.safeParse(body);
@@ -21,7 +19,7 @@ export async function POST(req: NextRequest) {
     const { email } = validation.data;
     const normalizedEmail = email.toLowerCase().trim();
 
-    const pending = await PendingUser.findOne({ email: normalizedEmail });
+    const pending = await prisma.pendingUser.findUnique({ where: { email: normalizedEmail } });
     if (!pending) {
       // Safe generic response to prevent account enumeration
       return NextResponse.json({
@@ -48,11 +46,15 @@ export async function POST(req: NextRequest) {
     const newOtpHash = await hashPassword(newOtp);
     const newExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    pending.otpHash = newOtpHash;
-    pending.otpExpiresAt = newExpiresAt;
-    pending.otpAttempts = 0;
-    pending.lastOtpSentAt = new Date();
-    await pending.save();
+    await prisma.pendingUser.update({
+      where: { id: pending.id },
+      data: {
+        otpHash: newOtpHash,
+        otpExpiresAt: newExpiresAt,
+        otpAttempts: 0,
+        lastOtpSentAt: new Date(),
+      },
+    });
 
     // Send Email
     const sent = await sendOtpEmail(normalizedEmail, pending.name, newOtp);

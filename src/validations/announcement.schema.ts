@@ -2,15 +2,7 @@ import { z } from 'zod';
 
 export const createAnnouncementSchema = z.object({
   internalName: z.string().min(2, 'Internal name is required'),
-  type: z.enum([
-    'General Notice',
-    'Holiday Notice',
-    'Important Notice',
-    'Offer / Promotion',
-    'Delivery Update',
-    'Maintenance',
-    'Custom',
-  ]),
+  type: z.string().min(1, 'Type is required'),
   title: z.object({
     en: z.string().default(''),
     ne: z.string().default(''),
@@ -43,7 +35,7 @@ export const createAnnouncementSchema = z.object({
   priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
   isActive: z.boolean().default(true),
   startAt: z.string().or(z.date()),
-  endAt: z.string().or(z.date()),
+  endAt: z.string().or(z.date()).optional().nullable(),
 });
 
 export type CreateAnnouncementInput = z.infer<typeof createAnnouncementSchema>;

@@ -4,6 +4,15 @@ import { existsSync } from 'fs';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
+const MIME_EXTENSION_MAP: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/jpg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+  'image/svg+xml': '.svg',
+};
+
 export async function saveLocalImage(fileOrBase64: File | string, folderName = 'uploads'): Promise<{ url: string; public_id: string }> {
   const uploadDir = path.join(process.cwd(), 'public', folderName);
 
@@ -18,15 +27,17 @@ export async function saveLocalImage(fileOrBase64: File | string, folderName = '
       throw new Error('Invalid base64 image data string format');
     }
 
-    const mimeType = matches[1];
+    const mimeType = matches[1].toLowerCase();
     const buffer = Buffer.from(matches[2], 'base64');
 
     if (buffer.length > MAX_FILE_SIZE) {
       throw new Error('Image size exceeds 5 MB limit. Please upload a smaller image.');
     }
 
-    const ext = mimeType.split('/')[1] || 'png';
-    const filename = `img_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+    let ext = MIME_EXTENSION_MAP[mimeType] || `.${mimeType.split('/')[1] || 'png'}`;
+    if (ext === '.jfif') ext = '.jpg';
+
+    const filename = `img_${Date.now()}_${Math.random().toString(36).substring(7)}${ext.startsWith('.') ? ext : `.${ext}`}`;
     const filePath = path.join(uploadDir, filename);
 
     await writeFile(filePath, buffer);
@@ -44,8 +55,14 @@ export async function saveLocalImage(fileOrBase64: File | string, folderName = '
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const ext = path.extname(file.name) || '.png';
-    const filename = `img_${Date.now()}_${Math.random().toString(36).substring(7)}${ext}`;
+    let ext = (path.extname(file.name) || '').toLowerCase();
+    
+    // Normalize .jfif or missing extension
+    if (!ext || ext === '.jfif') {
+      ext = MIME_EXTENSION_MAP[file.type.toLowerCase()] || (ext === '.jfif' ? '.jpg' : '.png');
+    }
+
+    const filename = `img_${Date.now()}_${Math.random().toString(36).substring(7)}${ext.startsWith('.') ? ext : `.${ext}`}`;
     const filePath = path.join(uploadDir, filename);
 
     await writeFile(filePath, buffer);

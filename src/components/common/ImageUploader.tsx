@@ -79,6 +79,7 @@ export default function ImageUploader({ value, onChange, label = 'Product Image'
             src={value}
             alt="Uploaded preview"
             fill
+            unoptimized
             className="object-contain p-2"
             sizes="(max-width: 768px) 100vw, 400px"
           />
